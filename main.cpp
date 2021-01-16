@@ -13,16 +13,20 @@ from liu_zhou
 //https://blog.csdn.net/yanglx2022/article/details/46582629
 //https://www.52pojie.cn/thread-799791-1-1.html
 //https://blog.csdn.net/Koevas/article/details/84679206?ops_request_misc=%25257B%252522request%25255Fid%252522%25253A%252522161008071416780264661008%252522%25252C%252522scm%252522%25253A%25252220140713.130102334..%252522%25257D&request_id=161008071416780264661008&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-84679206.first_rank_v2_pc_rank_v29&utm_term=%E6%9E%81%E5%9F%9F
+//https://blog.csdn.net/u012314571/article/details/89811045?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control
+//下面的回去关注 
+//https://blog.csdn.net/powerful_green/article/details/85037018?utm_medium=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase
 
 const int BUTTON1 = 3301; 
 const int BUTTON2 = 3302; 
 const int BUTTON3 = 3303; 
 const int BUTTON4 = 3304; 
 const int BUTTON5 = 3305; 
+const int BUTTON6 = 3306; 
 TCHAR lpTitle[256] = TEXT("屏幕广播");
 
 HANDLE ClassHandle = NULL, threadtotop = NULL;
-HWND windowtext = NULL, mytext = NULL, pidtext = NULL, nametext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, YesB = NULL, JcB = NULL; 
+HWND windowtext = NULL, mytext = NULL, pidtext = NULL, nametext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, YesB = NULL, JcB = NULL, PassWdB = NULL; 
 HWND Class = NULL;
 bool flag;
 DWORD pid;
@@ -80,8 +84,9 @@ void Buttonable(BOOL FLAG) {
 
 BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
 	EnableWindow(hwndChild, TRUE);
-	wchar_t str[100];
+	wchar_t str[100], strben[1000];
 	GetWindowTextW(hwndChild, str, 100);
+	
 	MessageBoxW(0, str, str, 0);
 	return TRUE;
 }
@@ -90,6 +95,20 @@ VOID CALLBACK SetWindowToTop(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTim
 	SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 	return; 
 } 
+
+VOID SetClipboard(LPCSTR str) {
+	if(OpenClipboard(NULL)) {
+		HGLOBAL hmem = GlobalAlloc(GHND, strlen(str) + 1);
+		LPVOID pmem = GlobalLock(hmem);
+		EmptyClipboard();
+		memcpy(pmem, str, strlen(str) + 1);
+		SetClipboardData(CF_TEXT, hmem);
+		CloseClipboard();
+		GlobalFree(hmem);
+	}
+	return;
+}
+
 
 //unsigned int __stdcall SetWindowToTop(LPVOID lParam) {
 //	while(exitflag) {
@@ -117,6 +136,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(BUTTON3), HINSTANCE(hwnd), NULL);
 			YesB = CreateWindow(TEXT("button"), TEXT("确认更改"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 260, 150, 50, hwnd, HMENU(BUTTON4), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("开放所有子控件"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(BUTTON5), HINSTANCE(hwnd), NULL);
+			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(BUTTON6), HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -144,9 +164,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 				}
 				case BUTTON5: {
 					EnumChildWindows(Class, EnumChildWindowsProc, NULL);
-					SetWindowText(mytext, "未开启");
+					/*const int JMP = 0xEB;
+					const LPVOID address = LPVOID(0x00431c14);
+					WriteProcessMemory(Class, address, &JMP, 1, 0);*/
 					break;
-				} 
+				}
+				case BUTTON6: {
+					SetClipboard("mythware_super_password");
+					break;
+				}
 			}
 			break;
 		}
