@@ -84,10 +84,10 @@ void Buttonable(BOOL FLAG) {
 
 BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
 	EnableWindow(hwndChild, TRUE);
-	wchar_t str[100], strben[1000];
-	GetWindowTextW(hwndChild, str, 100);
-	
-	MessageBoxW(0, str, str, 0);
+//	wchar_t str[100], strben[1000];
+//	GetWindowTextW(hwndChild, str, 100);
+//	
+//	MessageBoxW(0, str, str, 0);
 	return TRUE;
 }
 
