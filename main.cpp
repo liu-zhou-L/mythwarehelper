@@ -148,7 +148,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(BUTTON2), HINSTANCE(hwnd), NULL);
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(BUTTON3), HINSTANCE(hwnd), NULL);
 			YesB = CreateWindow(TEXT("button"), TEXT("确认更改"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 260, 150, 50, hwnd, HMENU(BUTTON4), HINSTANCE(hwnd), NULL);
-			JcB = CreateWindow(TEXT("button"), TEXT("开放所有子控件"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(BUTTON5), HINSTANCE(hwnd), NULL);
+			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(BUTTON5), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(BUTTON6), HINSTANCE(hwnd), NULL);
 			break;
 		} 
