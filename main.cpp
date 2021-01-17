@@ -83,11 +83,24 @@ void Buttonable(BOOL FLAG) {
 }*/
 
 BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
-	EnableWindow(hwndChild, TRUE);
+	HMENU hmenu = GetMenu(hwndChild);
+	if (LOWORD(hmenu) == 1004) {
+		EnableWindow(hwndChild, TRUE);
+		return FALSE;
+	} 
 //	wchar_t str[100], strben[1000];
 //	GetWindowTextW(hwndChild, str, 100);
 //	
 //	MessageBoxW(0, str, str, 0);
+	return TRUE;
+}
+
+BOOL CALLBACK EnumChildWindowsTest(HWND hwndChild, LPARAM lParam) {
+	EnableWindow(hwndChild, FALSE);
+	HMENU hmenu = GetMenu(hwndChild);
+	char buf[20] = {'\0'};
+	_ultoa(LOWORD(hmenu), buf, 10);
+	MessageBoxA(0, buf, buf, 0);
 	return TRUE;
 }
 
@@ -164,9 +177,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 				}
 				case BUTTON5: {
 					EnumChildWindows(Class, EnumChildWindowsProc, NULL);
-					/*const int JMP = 0xEB;
-					const LPVOID address = LPVOID(0x00431c14);
-					WriteProcessMemory(Class, address, &JMP, 1, 0);*/
+//					const int JMP =  0x73EB;
+//					const LPVOID address = LPVOID(0x00431c14);
+//					PSIZE_T pWritten = new SIZE_T;
+//					WriteProcessMemory(Class, address, &JMP, 1, pWritten);
+					//EnumChildWindows(Class, EnumChildWindowsTest, NULL);
 					break;
 				}
 				case BUTTON6: {
