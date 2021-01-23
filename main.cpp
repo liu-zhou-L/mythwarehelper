@@ -17,16 +17,16 @@ from liu_zhou
 //下面的回去关注 
 //https://blog.csdn.net/powerful_green/article/details/85037018?utm_medium=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase
 
-const int BUTTON1 = 3301; 
-const int BUTTON2 = 3302; 
-const int BUTTON3 = 3303; 
+const int SUSPEND_BUTTON = 3301; 
+const int RESUME_BUTTON = 3302; 
+const int KILL_BUTTON = 3303; 
 const int BUTTON4 = 3304; 
-const int BUTTON5 = 3305; 
-const int BUTTON6 = 3306; 
-TCHAR lpTitle[256] = TEXT("屏幕广播");
+const int JC_BUTTON = 3305; 
+const int PASSWD_BUTTON = 3306; 
+const TCHAR lpTitle[256] = TEXT("屏幕广播");
 
 HANDLE ClassHandle = NULL, threadtotop = NULL;
-HWND windowtext = NULL, mytext = NULL, pidtext = NULL, nametext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, YesB = NULL, JcB = NULL, PassWdB = NULL; 
+HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, nametext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
 HWND Class = NULL;
 bool flag;
 DWORD pid;
@@ -85,7 +85,14 @@ void Buttonable(BOOL FLAG) {
 BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
 	HMENU hmenu = GetMenu(hwndChild);
 	if (LOWORD(hmenu) == 1004) {
-		EnableWindow(hwndChild, TRUE);
+		if (!IsWindowEnabled(hwndChild)) {
+			EnableWindow(hwndChild, TRUE);
+			SetWindowText(JcB, "恢复全屏按钮限制");
+		}
+		else {
+			EnableWindow(hwndChild, FALSE);
+			SetWindowText(JcB, "解除全屏按钮限制");
+		}
 		return FALSE;
 	} 
 //	wchar_t str[100], strben[1000];
@@ -140,42 +147,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		case WM_CREATE: {
-			mytext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			pidtext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 100, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 100, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			nametext = CreateWindow(TEXT("edit"), lpTitle,  WS_VISIBLE | WS_CHILD | WS_BORDER, 170, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			windowtext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 350, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(BUTTON1), HINSTANCE(hwnd), NULL);
-			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(BUTTON2), HINSTANCE(hwnd), NULL);
-			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(BUTTON3), HINSTANCE(hwnd), NULL);
-			YesB = CreateWindow(TEXT("button"), TEXT("确认更改"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 260, 150, 50, hwnd, HMENU(BUTTON4), HINSTANCE(hwnd), NULL);
-			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(BUTTON5), HINSTANCE(hwnd), NULL);
-			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(BUTTON6), HINSTANCE(hwnd), NULL);
+			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
+			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
+			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
+			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
+			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
 		case WM_COMMAND: {
 			switch(LOWORD(wParam)) {
-				case BUTTON1: {
+				case SUSPEND_BUTTON: {
 					SuspendThread(ClassHandle);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
-				case BUTTON2: {
+				case RESUME_BUTTON: {
 					ResumeThread(ClassHandle);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
-				case BUTTON3: {
+				case KILL_BUTTON: {
 					TerminateThread(ClassHandle, NULL);
 					break;
 				}
-				case BUTTON4: {
-					TCHAR temp[128] = TEXT("");
-					GetWindowText(nametext, temp, 128);;
-					if (_tcscmp(lpTitle, temp) != 0) _tcscpy(lpTitle, temp);
-					break;
-				}
-				case BUTTON5: {
+				case JC_BUTTON: {
 					EnumChildWindows(Class, EnumChildWindowsProc, NULL);
 //					const int JMP =  0x73EB;
 //					const LPVOID address = LPVOID(0x00431c14);
@@ -184,7 +184,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					//EnumChildWindows(Class, EnumChildWindowsTest, NULL);
 					break;
 				}
-				case BUTTON6: {
+				case PASSWD_BUTTON: {
 					SetClipboard("mythware_super_password");
 					break;
 				}
@@ -246,18 +246,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
 		//EnumWindows(FindWindow, 0);
-		TCHAR temp[128];
-		GetWindowText(nametext, temp, 127);
 		Class = FindWindow(NULL, lpTitle);
 		if (Class != NULL) {
-			SetWindowText(mytext, "已开启");
 			GetWindowThreadProcessId(Class, &pid);
 			//ClassHandle = OpenProcess(PROCESS_SUSPEND_RESUME, false, pid);
 			ClassHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
-			wchar_t temp[15] = {};
+			wchar_t temptext[30] = TEXT("已开启"), temp[15];
 			_itow(pid, temp, 10);
-			//swprintf(temp, TEXT("%u"), pid);
-			SetWindowTextW(pidtext, temp);
+			wcscat(temptext, temp);
+			SetWindowTextW(mythwaretext, temptext);
 			flag = true;
 			Buttonable(TRUE);
 		}
@@ -265,8 +262,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			flag = false;
 			Buttonable(FALSE);
 			CloseHandle(ClassHandle);
-			SetWindowText(mytext, "未开启");
-			SetWindowText(pidtext, "未开启");
+			SetWindowText(mythwaretext, "未开启");
+			SetWindowText(guangbotext, "未开启");
 		}
 	}
 	KillTimer(NULL, timeid);
