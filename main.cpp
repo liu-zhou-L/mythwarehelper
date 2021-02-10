@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <tlhelp32.h>
 #include <process.h>
+#include <psapi.h>
 
 /*
 
@@ -23,12 +24,12 @@ const int KILL_BUTTON = 3303;
 const int BUTTON4 = 3304; 
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
-const TCHAR lpTitle[256] = TEXT("屏幕广播");
+LPCTSTR BroadcastTitle = TEXT("屏幕广播");
+LPCTSTR MythwareTitle = TEXT("C:\\Program Files (x86)\\Mythware\\极域课堂管理系统软件V6.0 2016 豪华版\\StudentMain.exe");
 
-HANDLE ClassHandle = NULL, threadtotop = NULL;
-HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, nametext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
-HWND Class = NULL;
-bool flag;
+HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadtotop = NULL;
+HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
+HWND Class = NULL, Mythware = NULL;
 DWORD pid;
 
 DWORD GetMainThreadFromId(const DWORD IdProcess) {
@@ -49,18 +50,38 @@ DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	return IdMainThread;
 } 
 
-void Buttonable(BOOL FLAG) {
-	if (FLAG == NULL) {
-		EnableWindow(SuspendB, FALSE);
-		EnableWindow(ResumeB, FALSE);
-		EnableWindow(KillB, FALSE);
-		EnableWindow(JcB, FALSE);
+DWORD GetProcessPidFromFilename(LPCTSTR Filename) {
+	if (Filename == '\0') return 0;
+	DWORD IdMainThread = NULL;
+	PROCESSENTRY32 te;
+	te.dwSize = sizeof(THREADENTRY32);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
+	if (Process32First(hSnapshot, &te)) {
+		do {
+			LPTSTR tempfilename;
+			GetModuleFileNameEx(OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID), NULL, tempfilename, 100);
+			if (_tcscmp(Filename, tempfilename)) {
+				IdMainThread = te.th32ProcessID;
+				break;
+			}
+		} while (Process32Next(hSnapshot, &te));
 	}
-	else {
-		EnableWindow(SuspendB, TRUE);
-		EnableWindow(ResumeB, TRUE);
-		EnableWindow(KillB, TRUE);
-		EnableWindow(JcB, TRUE);
+	CloseHandle(hSnapshot);
+	return IdMainThread;
+} 
+
+void Buttonable(BOOL FLAG, WORD WEI) {
+	switch(WEI) {
+		case 1: {
+			EnableWindow(SuspendB, FLAG);
+			EnableWindow(ResumeB, FLAG);
+			EnableWindow(KillB, FLAG);
+			break;
+		}
+		case 2: {
+			EnableWindow(JcB, FLAG);
+			break;
+		}
 	}
 	return;
 }
@@ -71,7 +92,7 @@ void Buttonable(BOOL FLAG) {
 	GetWindowText(hwnd, lpWinTitle, sizeof(lpWinTitle)); 
 	//GetModuleFileName(HMODULE(hwnd), lpWinTitle, sizeof(lpWinTitle));
 	if(lpWinTitle != "") {
-		if(_tcscmp(lpWinTitle, lpTitle) == 0) {
+		if(_tcscmp(lpWinTitle, BroadcastTitle) == 0) {
 			Class = hwnd;
 			LPDWORD temp;
 			GetWindowThreadProcessId(hwnd, temp);
@@ -149,7 +170,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		case WM_CREATE: {
 			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 100, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			nametext = CreateWindow(TEXT("edit"), lpTitle,  WS_VISIBLE | WS_CHILD | WS_BORDER, 170, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			windowtext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 350, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
 			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
@@ -162,17 +182,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		case WM_COMMAND: {
 			switch(LOWORD(wParam)) {
 				case SUSPEND_BUTTON: {
-					SuspendThread(ClassHandle);
+					SuspendThread(MythwareHandle);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
 				case RESUME_BUTTON: {
-					ResumeThread(ClassHandle);
+					ResumeThread(MythwareHandle);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
 				case KILL_BUTTON: {
-					TerminateThread(ClassHandle, NULL);
+					TerminateThread(MythwareHandle, NULL);
 					break;
 				}
 				case JC_BUTTON: {
@@ -199,7 +219,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 }
 
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	WNDCLASSEX wc; /* A properties struct of our window */
 	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
 	MSG msg; /* A temporary location for all messages */
@@ -240,31 +260,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	//threadtotop = (HANDLE)_beginthreadex(NULL, 0, SetWindowToTop, hwnd, NULL, NULL);
-	flag = false;
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
 		//EnumWindows(FindWindow, 0);
-		Class = FindWindow(NULL, lpTitle);
+		Class = FindWindow(NULL, BroadcastTitle);
 		if (Class != NULL) {
 			GetWindowThreadProcessId(Class, &pid);
 			//ClassHandle = OpenProcess(PROCESS_SUSPEND_RESUME, false, pid);
 			ClassHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
-			wchar_t temptext[30] = TEXT("已开启"), temp[15];
-			_itow(pid, temp, 10);
-			wcscat(temptext, temp);
+			/*wchar_t pidtemp[15];
+			_itow(pid, pidtemp, 10);
 			SetWindowTextW(mythwaretext, temptext);
-			flag = true;
-			Buttonable(TRUE);
+			*/
+			Buttonable(TRUE, 2);
+			SetWindowText(guangbotext, "广播已开启");
 		}
 		else {
-			flag = false;
-			Buttonable(FALSE);
+			Buttonable(FALSE, 2);
 			CloseHandle(ClassHandle);
-			SetWindowText(mythwaretext, "未开启");
-			SetWindowText(guangbotext, "未开启");
+			SetWindowText(guangbotext, "广播未开启");
 		}
+		pid = GetProcessPidFromFilename(MythwareTitle);
+		if (pid != NULL) {
+			GetWindowThreadProcessId(Mythware, &pid);
+			MythwareHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
+			Buttonable(TRUE, 1);
+			SetWindowText(mythwaretext, "极域已开启");
+		} 
+		else {
+			Buttonable(FALSE, 1);
+			CloseHandle(MythwareHandle);
+			SetWindowText(mythwaretext, "极域未开启");
+		} 
 	}
 	KillTimer(NULL, timeid);
 	return msg.wParam;
