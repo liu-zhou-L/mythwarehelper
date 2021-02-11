@@ -24,8 +24,8 @@ const int KILL_BUTTON = 3303;
 const int BUTTON4 = 3304; 
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
-LPCTSTR BroadcastTitle = TEXT("屏幕广播");
-LPCTSTR MythwareTitle = TEXT("C:\\Program Files (x86)\\Mythware\\极域课堂管理系统软件V6.0 2016 豪华版\\StudentMain.exe");
+LPCWSTR BroadcastTitle = LPCWSTR("屏幕广播");
+LPCWSTR MythwareTitle = LPCWSTR("C:\\Program Files (x86)\\Mythware\\极域课堂管理系统软件V6.0 2016 豪华版\\StudentMain.exe");
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadtotop = NULL;
 HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
@@ -50,7 +50,9 @@ DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	return IdMainThread;
 } 
 
-DWORD GetProcessPidFromFilename(LPCTSTR Filename) {
+extern DWORD WINAPI GetModuleFileNameExW(HANDLE hProcess,HMODULE hModule,LPWSTR lpFilename,DWORD nSize);
+
+DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
 	if (Filename == '\0') return 0;
 	DWORD IdMainThread = NULL;
 	PROCESSENTRY32 te;
@@ -58,12 +60,14 @@ DWORD GetProcessPidFromFilename(LPCTSTR Filename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
-			LPTSTR tempfilename;
-			GetModuleFileNameEx(OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID), NULL, tempfilename, 100);
-			if (_tcscmp(Filename, tempfilename)) {
+			WCHAR tempfilename[MAX_PATH];
+			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
+			GetModuleFileNameExW(temphandle, NULL, tempfilename, MAX_PATH);
+			if (wcscmp(Filename, tempfilename)) {
 				IdMainThread = te.th32ProcessID;
 				break;
 			}
+			CloseHandle(temphandle);
 		} while (Process32Next(hSnapshot, &te));
 	}
 	CloseHandle(hSnapshot);
@@ -242,7 +246,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		return 0;
 	}
 
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","Mythware helper",WS_VISIBLE|WS_OVERLAPPEDWINDOW^WS_MINIMIZEBOX^WS_MAXIMIZEBOX^WS_SIZEBOX,
+	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","Mythware helper",(WS_VISIBLE|WS_OVERLAPPEDWINDOW)^WS_MINIMIZEBOX^WS_MAXIMIZEBOX^WS_SIZEBOX,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
 		350, /* width */
@@ -265,7 +269,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
 		//EnumWindows(FindWindow, 0);
-		Class = FindWindow(NULL, BroadcastTitle);
+		Class = FindWindowW(NULL, BroadcastTitle);
 		if (Class != NULL) {
 			GetWindowThreadProcessId(Class, &pid);
 			//ClassHandle = OpenProcess(PROCESS_SUSPEND_RESUME, false, pid);
@@ -298,3 +302,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	KillTimer(NULL, timeid);
 	return msg.wParam;
 }
+
