@@ -1,17 +1,18 @@
 # Project: mythware helper
-# Makefile created by Dev-C++ 5.11
+# Makefile created by Dev-C++ 6.4-beta2
 
-CPP      = g++.exe -D__DEBUG__
-CC       = gcc.exe -D__DEBUG__
+CPP      = g++.exe
+CC       = gcc.exe
 WINDRES  = windres.exe
 OBJ      = main.o
 LINKOBJ  = main.o
-LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/lib" -static-libgcc -mwindows -g3
-INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include"
-CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/x86_64-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW64/lib/gcc/x86_64-w64-mingw32/4.9.2/include/c++"
+LIBS     = -L"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib" -L"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/lib" -static-libstdc++ -static-libgcc -O3 -s -lgdi32 -lgdiplus -mwindows -s
+INCS     = -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed"
+CXXINCS  = -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/i686-w64-mingw32" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/backward"
 BIN      = "mythware helper.exe"
-CXXFLAGS = $(CXXINCS) -Wall -g3
-CFLAGS   = $(INCS) -Wall -g3
+CXXFLAGS = $(CXXINCS) -O2
+ENCODINGS = -finput-charset=utf-8 -fexec-charset=gbk
+CFLAGS   = $(INCS) -O2
 RM       = rm.exe -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -25,4 +26,4 @@ $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
 
 main.o: main.cpp
-	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)
+	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  $(ENCODINGS) 

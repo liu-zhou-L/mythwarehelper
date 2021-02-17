@@ -15,7 +15,7 @@ from liu_zhou
 //https://www.52pojie.cn/thread-799791-1-1.html
 //https://blog.csdn.net/Koevas/article/details/84679206?ops_request_misc=%25257B%252522request%25255Fid%252522%25253A%252522161008071416780264661008%252522%25252C%252522scm%252522%25253A%25252220140713.130102334..%252522%25257D&request_id=161008071416780264661008&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-84679206.first_rank_v2_pc_rank_v29&utm_term=%E6%9E%81%E5%9F%9F
 //https://blog.csdn.net/u012314571/article/details/89811045?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control
-//œ¬√Êµƒªÿ»•πÿ◊¢ 
+//‰∏ãÈù¢ÁöÑÂõûÂéªÂÖ≥Ê≥® 
 //https://blog.csdn.net/powerful_green/article/details/85037018?utm_medium=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase
 
 const int SUSPEND_BUTTON = 3301; 
@@ -24,8 +24,9 @@ const int KILL_BUTTON = 3303;
 const int BUTTON4 = 3304; 
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
-LPCWSTR BroadcastTitle = LPCWSTR("∆¡ƒªπ„≤•");
-LPCWSTR MythwareTitle = LPCWSTR("C:\\Program Files (x86)\\Mythware\\º´”ÚøŒÃ√π‹¿ÌœµÕ≥»Ìº˛V6.0 2016 ∫¿ª™∞Ê\\StudentMain.exe");
+LPCWSTR BroadcastTitle = L"Â±èÂπïÂπøÊí≠";
+LPCWSTR MythwareFilename = L"C:\\Program Files (x86)\\Mythware\\ÊûÅÂüüËØæÂ†ÇÁÆ°ÁêÜÁ≥ªÁªüËΩØ‰ª∂V6.0 2016 Ë±™ÂçéÁâà\\StudentMain.exe";
+LPCWSTR MythwareTitle = L"StudentMain.exe";
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadtotop = NULL;
 HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
@@ -50,20 +51,39 @@ DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	return IdMainThread;
 } 
 
-extern DWORD WINAPI GetModuleFileNameExW(HANDLE hProcess,HMODULE hModule,LPWSTR lpFilename,DWORD nSize);
+BOOL ModuleIsAble(HANDLE Process, LPCWSTR Modulename) {
+	if (Modulename[0] == '\0') return FALSE;
+	MODULEENTRY32 me;
+	me.dwSize = sizeof(MODULEENTRY32);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+	if (Module32First(hSnapshot, &me)) {
+		do {
+			WCHAR tempmodulename[MAX_PATH];
+			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, me.th32ModuleID);
+			GetModuleFileNameExW(temphandle, NULL, tempmodulename, MAX_PATH);
+			if (!wcscmp(Modulename, tempmodulename)) {
+				CloseHandle(temphandle);
+				CloseHandle(hSnapshot);
+				return TRUE;
+			}
+			CloseHandle(temphandle);
+		} while (Module32Next(hSnapshot, &me));
+	}
+	CloseHandle(hSnapshot);
+	return FALSE;
+}
 
 DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
-	if (Filename == '\0') return 0;
+	if (Filename[0] == '\0') return 0;
 	DWORD IdMainThread = NULL;
 	PROCESSENTRY32 te;
-	te.dwSize = sizeof(THREADENTRY32);
+	te.dwSize = sizeof(PROCESSENTRY32);
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
 			WCHAR tempfilename[MAX_PATH];
 			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
-			GetModuleFileNameExW(temphandle, NULL, tempfilename, MAX_PATH);
-			if (wcscmp(Filename, tempfilename)) {
+			if (ModuleIsAble(temphandle, Filename)) {
 				IdMainThread = te.th32ProcessID;
 				break;
 			}
@@ -112,11 +132,11 @@ BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
 	if (LOWORD(hmenu) == 1004) {
 		if (!IsWindowEnabled(hwndChild)) {
 			EnableWindow(hwndChild, TRUE);
-			SetWindowText(JcB, "ª÷∏¥»´∆¡∞¥≈•œﬁ÷∆");
+			SetWindowText(JcB, "ÊÅ¢Â§çÂÖ®Â±èÊåâÈíÆÈôêÂà∂");
 		}
 		else {
 			EnableWindow(hwndChild, FALSE);
-			SetWindowText(JcB, "Ω‚≥˝»´∆¡∞¥≈•œﬁ÷∆");
+			SetWindowText(JcB, "Ëß£Èô§ÂÖ®Â±èÊåâÈíÆÈôêÂà∂");
 		}
 		return FALSE;
 	} 
@@ -175,11 +195,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 100, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			windowtext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 350, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			SuspendB = CreateWindow(TEXT("button"), TEXT("π“∆"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
-			ResumeB = CreateWindow(TEXT("button"), TEXT("ª÷∏¥"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
-			KillB = CreateWindow(TEXT("button"), TEXT("…±À¿"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
-			JcB = CreateWindow(TEXT("button"), TEXT("Ω‚≥˝»´∆¡∞¥≈•œﬁ÷∆"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
-			PassWdB = CreateWindow(TEXT("button"), TEXT("∏¥÷∆ÕÚƒ‹√‹¬Î"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
+			SuspendB = CreateWindow(TEXT("button"), TEXT("ÊåÇËµ∑"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
+			ResumeB = CreateWindow(TEXT("button"), TEXT("ÊÅ¢Â§ç"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
+			KillB = CreateWindow(TEXT("button"), TEXT("ÊùÄÊ≠ª"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
+			JcB = CreateWindow(TEXT("button"), TEXT("Ëß£Èô§ÂÖ®Â±èÊåâÈíÆÈôêÂà∂"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
+			PassWdB = CreateWindow(TEXT("button"), TEXT("Â§çÂà∂‰∏áËÉΩÂØÜÁ†Å"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -187,12 +207,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			switch(LOWORD(wParam)) {
 				case SUSPEND_BUTTON: {
 					SuspendThread(MythwareHandle);
-					//MessageBox(NULL, "µ„ª˜", "µ„ª˜", NULL);
+					//MessageBox(NULL, "ÁÇπÂáª", "ÁÇπÂáª", NULL);
 					break;
 				}
 				case RESUME_BUTTON: {
 					ResumeThread(MythwareHandle);
-					//MessageBox(NULL, "µ„ª˜", "µ„ª˜", NULL);
+					//MessageBox(NULL, "ÁÇπÂáª", "ÁÇπÂáª", NULL);
 					break;
 				}
 				case KILL_BUTTON: {
@@ -237,9 +257,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	
 	/* White, COLOR_WINDOW is just a #define for a system color, try Ctrl+Clicking it */
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	wc.lpszClassName = "WindowClass";
-	wc.hIcon		 = LoadIcon(NULL, IDI_APPLICATION); /*»ŒŒÒ¿∏Õº±Í*/
-	wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION); /*¥∞ø⁄Õº±Í*/
+	wc.lpszClassName = TEXT("WindowClass");
+	wc.hIcon		 = LoadIcon(NULL, IDI_APPLICATION); /*‰ªªÂä°Ê†èÂõæÊ†á*/
+	wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION); /*Á™óÂè£ÂõæÊ†á*/
 
 	if(!RegisterClassEx(&wc)) {
 		MessageBox(NULL, "Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
@@ -279,27 +299,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			SetWindowTextW(mythwaretext, temptext);
 			*/
 			Buttonable(TRUE, 2);
-			SetWindowText(guangbotext, "π„≤•“—ø™∆Ù");
+			SetWindowText(guangbotext, "ÂπøÊí≠Â∑≤ÂºÄÂêØ");
 		}
 		else {
 			Buttonable(FALSE, 2);
 			CloseHandle(ClassHandle);
-			SetWindowText(guangbotext, "π„≤•Œ¥ø™∆Ù");
+			SetWindowText(guangbotext, "ÂπøÊí≠Êú™ÂºÄÂêØ");
 		}
 		pid = GetProcessPidFromFilename(MythwareTitle);
+		//Class = FindWindowW(NULL, MythwareTitle);
 		if (pid != NULL) {
 			GetWindowThreadProcessId(Mythware, &pid);
 			MythwareHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
 			Buttonable(TRUE, 1);
-			SetWindowText(mythwaretext, "º´”Ú“—ø™∆Ù");
+			SetWindowText(mythwaretext, "ÊûÅÂüüÂ∑≤ÂºÄÂêØ");
 		} 
 		else {
 			Buttonable(FALSE, 1);
 			CloseHandle(MythwareHandle);
-			SetWindowText(mythwaretext, "º´”ÚŒ¥ø™∆Ù");
+			SetWindowText(mythwaretext, "ÊûÅÂüüÊú™ÂºÄÂêØ");
 		} 
 	}
 	KillTimer(NULL, timeid);
 	return msg.wParam;
 }
-
