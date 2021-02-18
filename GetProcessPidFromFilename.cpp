@@ -4,18 +4,17 @@
 #include <tlhelp32.h>
 #include <psapi.h>
 
-LPCWSTR MythwareFilename = L"C:\\Users\\NING MEI\\Desktop\\GetProcessPidFromFilename.exe";
+LPCSTR MythwareFilename = "StudentMain.exe";
 
-BOOL ModuleIsAble(HANDLE Process, LPCWSTR Modulename) {
+BOOL ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 	if (Modulename[0] == '\0') return FALSE;
 	MODULEENTRY32 me;
 	me.dwSize = sizeof(MODULEENTRY32);
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessPid);
 	if (Module32First(hSnapshot, &me)) {
 		do {
 			printf("%s\n", me.szModule);
-			DWORD lenMultiByteToWideChar(CP_ACP, me.szModule)
-			if (!wcscmp(Modulename, )) {
+			if (!strcmp(Modulename, me.szModule)) {
 				CloseHandle(hSnapshot);
 				return TRUE;
 			}
@@ -25,7 +24,7 @@ BOOL ModuleIsAble(HANDLE Process, LPCWSTR Modulename) {
 	return FALSE;
 }
 
-DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
+DWORD GetProcessPidFromFilename(LPCSTR Filename) {
 	if (Filename[0] == '\0') return 0;
 	DWORD IdMainThread = NULL;
 	PROCESSENTRY32 te;
@@ -33,9 +32,10 @@ DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
-			WCHAR tempfilename[MAX_PATH];
+			CHAR tempfilename[MAX_PATH];
 			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
-			if (ModuleIsAble(temphandle, Filename)) {
+			printf("%d\n", te.th32ProcessID);
+			if (ModuleIsAble(te.th32ProcessID, Filename)) {
 				IdMainThread = te.th32ProcessID;
 				break;
 			}
@@ -47,8 +47,9 @@ DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
 } 
 
 int main() {
+	
 	DWORD pid = GetProcessPidFromFilename(MythwareFilename);
-	printf("%u", pid); 
+	printf("%d", pid); 
 	getchar(); 
 	return 0;
 } 

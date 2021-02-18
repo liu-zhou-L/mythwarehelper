@@ -25,11 +25,11 @@ const int BUTTON4 = 3304;
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
 LPCWSTR BroadcastTitle = L"屏幕广播";
-LPCWSTR MythwareFilename = L"C:\\Program Files (x86)\\Mythware\\极域课堂管理系统软件V6.0 2016 豪华版\\StudentMain.exe";
+LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadtotop = NULL;
-HWND windowtext = NULL, mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
+HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
 
@@ -51,29 +51,25 @@ DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	return IdMainThread;
 } 
 
-BOOL ModuleIsAble(HANDLE Process, LPCWSTR Modulename) {
+BOOL ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 	if (Modulename[0] == '\0') return FALSE;
 	MODULEENTRY32 me;
 	me.dwSize = sizeof(MODULEENTRY32);
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessPid);
 	if (Module32First(hSnapshot, &me)) {
 		do {
-			WCHAR tempmodulename[MAX_PATH];
-			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, me.th32ModuleID);
-			GetModuleFileNameExW(temphandle, NULL, tempmodulename, MAX_PATH);
-			if (!wcscmp(Modulename, tempmodulename)) {
-				CloseHandle(temphandle);
+			printf("%s\n", me.szModule);
+			if (!strcmp(Modulename, me.szModule)) {
 				CloseHandle(hSnapshot);
 				return TRUE;
 			}
-			CloseHandle(temphandle);
 		} while (Module32Next(hSnapshot, &me));
 	}
 	CloseHandle(hSnapshot);
 	return FALSE;
 }
 
-DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
+DWORD GetProcessPidFromFilename(LPCSTR Filename) {
 	if (Filename[0] == '\0') return 0;
 	DWORD IdMainThread = NULL;
 	PROCESSENTRY32 te;
@@ -81,9 +77,10 @@ DWORD GetProcessPidFromFilename(LPCWSTR Filename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
-			WCHAR tempfilename[MAX_PATH];
+			CHAR tempfilename[MAX_PATH];
 			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
-			if (ModuleIsAble(temphandle, Filename)) {
+			printf("%d\n", te.th32ProcessID);
+			if (ModuleIsAble(te.th32ProcessID, Filename)) {
 				IdMainThread = te.th32ProcessID;
 				break;
 			}
@@ -186,6 +183,9 @@ VOID SetClipboard(LPCSTR str) {
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 	switch(Message) {
+		case WM_CLOSE: {
+			
+		} 
 		case WM_DESTROY: {
 			CloseHandle(threadtotop);
 			PostQuitMessage(0);
@@ -193,13 +193,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		}
 		case WM_CREATE: {
 			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 100, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			windowtext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 350, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
-			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
-			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 260, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
-			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 100, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
-			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 350, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
+			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 170, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 70, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
+			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 130, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
+			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
+			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 70, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
+			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -270,7 +269,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
 		350, /* width */
-		450, /* height */
+		280, /* height */
 		NULL,NULL,hInstance,NULL);
 
 	if(hwnd == NULL) {
@@ -306,7 +305,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			CloseHandle(ClassHandle);
 			SetWindowText(guangbotext, "广播未开启");
 		}
-		pid = GetProcessPidFromFilename(MythwareTitle);
+		pid = GetProcessPidFromFilename(MythwareFilename);
 		//Class = FindWindowW(NULL, MythwareTitle);
 		if (pid != NULL) {
 			GetWindowThreadProcessId(Mythware, &pid);
