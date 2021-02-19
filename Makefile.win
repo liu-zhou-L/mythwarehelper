@@ -4,11 +4,12 @@
 CPP      = g++.exe
 CC       = gcc.exe
 WINDRES  = windres.exe
-OBJ      = main.o
-LINKOBJ  = main.o
-LIBS     = -L"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib" -L"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/lib" -static-libstdc++ -static-libgcc -O3 -s -lgdi32 -lgdiplus -mwindows -s
-INCS     = -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed"
-CXXINCS  = -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/i686-w64-mingw32" -I"C:/Users/NING MEI/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/backward"
+RES      = mythware_helper_private.res
+OBJ      = main.o $(RES)
+LINKOBJ  = main.o $(RES)
+LIBS     = -L"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib" -L"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/lib" -static-libstdc++ -static-libgcc -O3 -s -lgdi32 -lgdiplus -mwindows -s
+INCS     = -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed"
+CXXINCS  = -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/i686-w64-mingw32/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/i686-w64-mingw32" -I"C:/Users/asus/Desktop/Dev_Cpp_6.4_beta2_build_2021.2.1/MinGW32/include/c++/10.2.0/backward"
 BIN      = "mythware helper.exe"
 CXXFLAGS = $(CXXINCS) -O2
 ENCODINGS = -finput-charset=utf-8 -fexec-charset=gbk
@@ -27,3 +28,7 @@ $(BIN): $(OBJ)
 
 main.o: main.cpp
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  $(ENCODINGS) 
+
+mythware_helper_private.res: mythware_helper_private.rc 
+	$(WINDRES) -i mythware_helper_private.rc --input-format=rc -o mythware_helper_private.res -O coff 
+
