@@ -16,21 +16,21 @@ FILETYPE VFT_APP
 {
   BLOCK "StringFileInfo"
   {
-    BLOCK "040904E4"
+    BLOCK "080404E4"
     {
       VALUE "CompanyName", ""
       VALUE "FileVersion", "1.0.0.0"
-      VALUE "FileDescription", "Developed using the Dev-C++ IDE"
-      VALUE "InternalName", ""
+      VALUE "FileDescription", "Mythware helper from liu_zhou"
+      VALUE "InternalName", "Mythware helper"
       VALUE "LegalCopyright", ""
       VALUE "LegalTrademarks", ""
-      VALUE "OriginalFilename", ""
-      VALUE "ProductName", ""
+      VALUE "OriginalFilename", "Mythware helper"
+      VALUE "ProductName", "Mythware helper"
       VALUE "ProductVersion", "1.0.0.0"
     }
   }
   BLOCK "VarFileInfo"
   {
-    VALUE "Translation", 0x0409, 1252
+    VALUE "Translation", 0x0804, 1252
   }
 }

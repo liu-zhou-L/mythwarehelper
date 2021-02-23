@@ -12,12 +12,12 @@
 #define VER_BUILD	0
 #define COMPANY_NAME	""
 #define FILE_VERSION	"1.0.0.0"
-#define FILE_DESCRIPTION	"Developed using the Dev-C++ IDE"
-#define INTERNAL_NAME	""
+#define FILE_DESCRIPTION	"Mythware helper from liu_zhou"
+#define INTERNAL_NAME	"Mythware helper"
 #define LEGAL_COPYRIGHT	""
 #define LEGAL_TRADEMARKS	""
-#define ORIGINAL_FILENAME	""
-#define PRODUCT_NAME	""
+#define ORIGINAL_FILENAME	"Mythware helper"
+#define PRODUCT_NAME	"Mythware helper"
 #define PRODUCT_VERSION	"1.0.0.0"
 
 #endif /*MYTHWARE_HELPER_PRIVATE_H*/

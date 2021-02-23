@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <tlhelp32.h>
 #include <psapi.h>
+#include <process.h>
 
 LPCSTR MythwareFilename = "StudentMain.exe";
 
@@ -32,9 +33,8 @@ DWORD GetProcessPidFromFilename(LPCSTR Filename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
-			CHAR tempfilename[MAX_PATH];
 			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
-			printf("%d\n", te.th32ProcessID);
+			printf("%ld\n", te.th32ProcessID);
 			if (ModuleIsAble(te.th32ProcessID, Filename)) {
 				IdMainThread = te.th32ProcessID;
 				break;
@@ -46,10 +46,24 @@ DWORD GetProcessPidFromFilename(LPCSTR Filename) {
 	return IdMainThread;
 } 
 
+unsigned int __stdcall Print1(LPVOID) {
+	while(1) {
+		printf("Hello!\n");
+	}
+	return TRUE;
+}
+unsigned int __stdcall Print2(LPVOID) {
+	while(1) {
+		printf("World!\n");
+	}
+	return TRUE;
+}
+
 int main() {
-	
-	DWORD pid = GetProcessPidFromFilename(MythwareFilename);
-	printf("%d", pid); 
+	HANDLE temp1 = (HANDLE)_beginthreadex(NULL, 0, Print1, NULL, 0, NULL);
+	HANDLE temp2 = (HANDLE)_beginthreadex(NULL, 0, Print2, NULL, 0, NULL);
+	CloseHandle(temp1);
+	CloseHandle(temp2);
 	getchar(); 
 	return 0;
 } 
