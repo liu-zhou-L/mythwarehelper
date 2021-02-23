@@ -4,6 +4,7 @@
 #include <tlhelp32.h>
 #include <process.h>
 #include <psapi.h>
+#include <atomic> 
 
 /*
 
@@ -32,6 +33,7 @@ HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
+std::atomic<bool> flagKeyboradHook;
 
 DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	if (IdProcess <= 0) return 0;
@@ -207,6 +209,34 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 	return 0;
 }
 
+LRESULT CALLBACK KeyboardProc(int nCode,WPARAM wParam,LPARAM lParam) {
+	return CallNextHookEx(NULL,nCode,wParam,lParam);
+}
+
+unsigned int __stdcall KeyboradHook(LPVOID lParam) {
+	HHOOK m_hHOOK1 = NULL, m_hHOOK2 = NULL,m_hHOOK3 = NULL,m_hHOOK4 = NULL; 
+	m_hHOOK1 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+	m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+	m_hHOOK3 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+	m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+	while(true)
+	{
+		if(flagKeyboradHook.load())
+		{
+			UnhookWindowsHookEx(m_hHOOK1);
+			UnhookWindowsHookEx(m_hHOOK3);
+			m_hHOOK1 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+			m_hHOOK3 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+			UnhookWindowsHookEx(m_hHOOK2);
+			UnhookWindowsHookEx(m_hHOOK4);
+			m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+			m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+		}
+	}
+	_endthreadex(0);
+	return 0;
+}
+
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 	switch(Message) {
@@ -310,6 +340,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, NULL, NULL);
+	flagKeyboradHook.store(true);
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
