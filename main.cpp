@@ -29,7 +29,7 @@ LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
 
-HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL;
+HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
@@ -245,6 +245,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		} 
 		case WM_DESTROY: {
 			CloseHandle(threadisstart);
+			CloseHandle(threadKeyboradHook);
 			PostQuitMessage(0);
 			break;
 		}
@@ -340,6 +341,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, NULL, NULL);
+	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, NULL, NULL);
 	flagKeyboradHook.store(true);
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
