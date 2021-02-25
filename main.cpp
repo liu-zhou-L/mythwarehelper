@@ -329,15 +329,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	/* White, COLOR_WINDOW is just a #define for a system color, try Ctrl+Clicking it */
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
 	wc.lpszClassName = TEXT("WindowClass");
-	wc.hIcon		 = LoadIcon(NULL, IDI_APPLICATION); /*任务栏图标*/
-	wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION); /*窗口图标*/
+	wc.hIcon		 = LoadIcon(NULL, IDC_ICON/*IDI_APPLICATION*/); /*任务栏图标*/
+	wc.hIconSm		 = LoadIcon(NULL, IDC_ICON/*IDI_APPLICATION*/); /*窗口图标*/
 
 	if(!RegisterClassEx(&wc)) {
 		MessageBox(NULL, "Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
 		return 0;
 	}
 
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","Mythware helper",(WS_VISIBLE|WS_OVERLAPPEDWINDOW)^WS_MINIMIZEBOX^WS_MAXIMIZEBOX^WS_SIZEBOX,
+	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","Mythware helper",(WS_VISIBLE|WS_OVERLAPPEDWINDOW)^WS_MAXIMIZEBOX^WS_SIZEBOX,
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
 		350, /* width */
