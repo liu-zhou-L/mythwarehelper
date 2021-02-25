@@ -25,12 +25,13 @@ const int KILL_BUTTON = 3303;
 const int BUTTON4 = 3304; 
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
+const int KEYBORADHOOK_BUTTON = 3307;
 LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL;
-HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL; 
+HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
 std::atomic<bool> flagKeyboradHook;
@@ -102,6 +103,7 @@ void Buttonable(BOOL FLAG, WORD WEI) {
 		}
 		case 2: {
 			EnableWindow(JcB, FLAG);
+			EnableWindow(KeyboradHookB, FLAG);
 			break;
 		}
 	}
@@ -257,6 +259,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 70, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
+			KeyboradHookB = CreateWindow(TEXT("button"), TEXT("解除键盘锁"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -287,6 +290,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 				}
 				case PASSWD_BUTTON: {
 					SetClipboard("mythware_super_password");
+					break;
+				}
+				case KEYBORADHOOK_BUTTON: {
+					if (flagKeyboradHook.load()) {
+						flagKeyboradHook.store(false);
+						SetWindowText(KeyboradHookB, "解除键盘锁");
+					}
+					else {
+						flagKeyboradHook.store(true);
+						SetWindowText(KeyboradHookB, "恢复键盘锁");
+					}
 					break;
 				}
 			}
@@ -342,7 +356,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	*/
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, NULL, NULL);
 	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, NULL, NULL);
-	flagKeyboradHook.store(true);
+	flagKeyboradHook.store(false);
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
