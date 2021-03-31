@@ -60,10 +60,7 @@ unsigned int __stdcall Print2(LPVOID) {
 }
 
 int main() {
-	HANDLE temp1 = (HANDLE)_beginthreadex(NULL, 0, Print1, NULL, 0, NULL);
-	HANDLE temp2 = (HANDLE)_beginthreadex(NULL, 0, Print2, NULL, 0, NULL);
-	CloseHandle(temp1);
-	CloseHandle(temp2);
+	
 	getchar(); 
 	return 0;
 } 

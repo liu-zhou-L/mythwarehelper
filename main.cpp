@@ -5,6 +5,7 @@
 #include <process.h>
 #include <psapi.h>
 #include <atomic> 
+#include "HOOKAPI.h"
 
 /*
 
@@ -12,12 +13,15 @@ from liu_zhou
 
 */
 
+//IsStart 出问题 3/30 
+
 //https://blog.csdn.net/yanglx2022/article/details/46582629
 //https://www.52pojie.cn/thread-799791-1-1.html
 //https://blog.csdn.net/Koevas/article/details/84679206?ops_request_misc=%25257B%252522request%25255Fid%252522%25253A%252522161008071416780264661008%252522%25252C%252522scm%252522%25253A%25252220140713.130102334..%252522%25257D&request_id=161008071416780264661008&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-84679206.first_rank_v2_pc_rank_v29&utm_term=%E6%9E%81%E5%9F%9F
 //https://blog.csdn.net/u012314571/article/details/89811045?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control
 //下面的回去关注 
 //https://blog.csdn.net/powerful_green/article/details/85037018?utm_medium=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase
+//https://blog.csdn.net/wangjieest/article/details/7065457
 
 const int SUSPEND_BUTTON = 3301; 
 const int RESUME_BUTTON = 3302; 
@@ -30,7 +34,7 @@ LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
 
-HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL;
+HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL, threadSetWindowName = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
@@ -38,7 +42,7 @@ std::atomic<bool> flagKeyboradHook;
 
 DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	if (IdProcess <= 0) return 0;
-	DWORD IdMainThread = NULL;
+	DWORD IdMainThread = 0;
 	THREADENTRY32 te;
 	te.dwSize = sizeof(THREADENTRY32);
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0); 
@@ -61,7 +65,7 @@ BOOL ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessPid);
 	if (Module32First(hSnapshot, &me)) {
 		do {
-			printf("%s\n", me.szModule);
+			//printf("%s\n", me.szModule);
 			if (!strcmp(Modulename, me.szModule)) {
 				CloseHandle(hSnapshot);
 				return TRUE;
@@ -74,23 +78,23 @@ BOOL ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 
 DWORD GetProcessPidFromFilename(LPCSTR Filename) {
 	if (Filename[0] == '\0') return 0;
-	DWORD IdMainThread = NULL;
+	DWORD IdMainThread = 0;
 	PROCESSENTRY32 te;
 	te.dwSize = sizeof(PROCESSENTRY32);
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
 	if (Process32First(hSnapshot, &te)) {
 		do {
 			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
-			printf("%ld\n", te.th32ProcessID);
+			//printf("%ld\n", te.th32ProcessID);
 			if (ModuleIsAble(te.th32ProcessID, Filename)) {
 				IdMainThread = te.th32ProcessID;
-				break;
+				CloseHandle(hSnapshot);
+				return IdMainThread;
 			}
 			CloseHandle(temphandle);
 		} while (Process32Next(hSnapshot, &te));
 	}
-	CloseHandle(hSnapshot);
-	return IdMainThread;
+	return 0;
 } 
 
 void Buttonable(BOOL FLAG, WORD WEI) {
@@ -103,7 +107,7 @@ void Buttonable(BOOL FLAG, WORD WEI) {
 		}
 		case 2: {
 			EnableWindow(JcB, FLAG);
-			EnableWindow(KeyboradHookB, FLAG);
+			//EnableWindow(KeyboradHookB, FLAG);
 			break;
 		}
 	}
@@ -195,7 +199,7 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			SetWindowText(guangbotext, "广播未开启");
 		}
 		pid = GetProcessPidFromFilename(MythwareFilename);
-		if (pid != NULL) {
+		if (pid != 0) {
 			GetWindowThreadProcessId(Mythware, &pid);
 			MythwareHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
 			Buttonable(TRUE, 1);
@@ -205,9 +209,20 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			Buttonable(FALSE, 1);
 			CloseHandle(MythwareHandle);
 			SetWindowText(mythwaretext, "极域未开启");
-		} 
+		}
+		printf("%u\n", pid);
 	}
-	_endthreadex(0);
+	return 0;
+}
+
+unsigned int _stdcall SetWindowName(LPVOID lParam) {
+	while (1) {
+		HWND hwndsec = GetNextWindow(HWND(lParam), GW_HWNDNEXT);
+		char tempstr[100];
+		GetWindowText(hwndsec, tempstr, 100);
+		SetWindowText(HWND(lParam), tempstr);
+		Sleep(500);
+	}
 	return 0;
 }
 
@@ -223,7 +238,8 @@ unsigned int __stdcall KeyboradHook(LPVOID lParam) {
 	m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 	while(true)
 	{
-		if(flagKeyboradHook.load())
+		LRESULT res = SendMessage(KeyboradHookB, BM_GETSTATE, 0, 0);
+		if(res == BST_CHECKED)
 		{
 			UnhookWindowsHookEx(m_hHOOK1);
 			UnhookWindowsHookEx(m_hHOOK3);
@@ -234,8 +250,13 @@ unsigned int __stdcall KeyboradHook(LPVOID lParam) {
 			m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 			m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 		}
+		else {
+			UnhookWindowsHookEx(m_hHOOK1);
+			UnhookWindowsHookEx(m_hHOOK3);
+			UnhookWindowsHookEx(m_hHOOK2);
+			UnhookWindowsHookEx(m_hHOOK4);
+		} 
 	}
-	_endthreadex(0);
 	return 0;
 }
 
@@ -243,11 +264,12 @@ unsigned int __stdcall KeyboradHook(LPVOID lParam) {
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 	switch(Message) {
 		case WM_CLOSE: {
-			
+			 
 		} 
 		case WM_DESTROY: {
 			CloseHandle(threadisstart);
 			CloseHandle(threadKeyboradHook);
+			CloseHandle(threadSetWindowName);
 			PostQuitMessage(0);
 			break;
 		}
@@ -259,7 +281,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 70, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
-			KeyboradHookB = CreateWindow(TEXT("button"), TEXT("解除键盘锁"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 190, 150, 50, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 190, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 190, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -276,11 +299,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					break;
 				}
 				case KILL_BUTTON: {
-					TerminateThread(MythwareHandle, NULL);
+					TerminateThread(MythwareHandle, 0);
 					break;
 				}
 				case JC_BUTTON: {
-					EnumChildWindows(Class, EnumChildWindowsProc, NULL);
+					EnumChildWindows(Class, EnumChildWindowsProc, (LPARAM)0);
 //					const int JMP =  0x73EB;
 //					const LPVOID address = LPVOID(0x00431c14);
 //					PSIZE_T pWritten = new SIZE_T;
@@ -293,14 +316,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					break;
 				}
 				case KEYBORADHOOK_BUTTON: {
-					if (flagKeyboradHook.load()) {
+					//MessageBox(NULL, "点击", "点击", 0); 
+					printf("%u\n", Message);
+					/*if (flagKeyboradHook.load()) {
 						flagKeyboradHook.store(false);
 						SetWindowText(KeyboradHookB, "解除键盘锁");
 					}
 					else {
 						flagKeyboradHook.store(true);
 						SetWindowText(KeyboradHookB, "恢复键盘锁");
-					}
+					}*/
 					break;
 				}
 			}
@@ -354,9 +379,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
 		this loop will not produce unreasonably high CPU usage
 	*/
-	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, NULL, NULL);
-	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, NULL, NULL);
-	flagKeyboradHook.store(false);
+	freopen("log.txt", "w", stdout);
+	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
+	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, 0, 0);
+	threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
