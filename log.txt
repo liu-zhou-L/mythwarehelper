@@ -1,0 +1,2 @@
+ntsd -c q -p 4444
+ntsd -c q -p 4444

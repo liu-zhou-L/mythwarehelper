@@ -38,7 +38,6 @@ HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKe
 HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
-std::atomic<bool> flagKeyboradHook;
 
 DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	if (IdProcess <= 0) return 0;
@@ -200,8 +199,9 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 		}
 		pid = GetProcessPidFromFilename(MythwareFilename);
 		if (pid != 0) {
+			
 			GetWindowThreadProcessId(Mythware, &pid);
-			MythwareHandle = OpenThread(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
+			MythwareHandle = OpenProcess(THREAD_ALL_ACCESS, false, GetMainThreadFromId(pid));
 			Buttonable(TRUE, 1);
 			SetWindowText(mythwaretext, "极域已开启");
 		} 
@@ -210,7 +210,7 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			CloseHandle(MythwareHandle);
 			SetWindowText(mythwaretext, "极域未开启");
 		}
-		printf("%u\n", pid);
+		//printf("%u\n", pid);
 	}
 	return 0;
 }
@@ -299,7 +299,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					break;
 				}
 				case KILL_BUTTON: {
-					TerminateThread(MythwareHandle, 0);
+					//TerminateThread(MythwareHandle, 0);
+					char pidtemp[15], tempstr[50] = "ntsd -c q -p ";
+					_itoa(pid, pidtemp, 10);
+					strcat(tempstr, pidtemp);
+					puts(tempstr);
+					WinExec(tempstr, SW_HIDE);
 					break;
 				}
 				case JC_BUTTON: {
