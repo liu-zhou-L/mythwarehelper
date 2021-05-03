@@ -5,7 +5,10 @@
 #include <process.h>
 #include <psapi.h>
 #include <atomic> 
+#include <io.h>
 #include "HOOKAPI.h"
+
+#define ThreadSafe __declspec(thread) 
 
 /*
 
@@ -19,6 +22,7 @@ from liu_zhou
 //https://www.52pojie.cn/thread-799791-1-1.html
 //https://blog.csdn.net/Koevas/article/details/84679206?ops_request_misc=%25257B%252522request%25255Fid%252522%25253A%252522161008071416780264661008%252522%25252C%252522scm%252522%25253A%25252220140713.130102334..%252522%25257D&request_id=161008071416780264661008&biz_id=0&utm_medium=distribute.pc_search_result.none-task-blog-2~all~top_click~default-1-84679206.first_rank_v2_pc_rank_v29&utm_term=%E6%9E%81%E5%9F%9F
 //https://blog.csdn.net/u012314571/article/details/89811045?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control&depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromMachineLearnPai2-1.control
+//https://blog.csdn.net/m0_46544479/article/details/105195666	文件操作 
 //下面的回去关注 
 //https://blog.csdn.net/powerful_green/article/details/85037018?utm_medium=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase&depth_1-utm_source=distribute.pc_relevant_download.none-task-blog-baidujs-1.nonecase
 //https://blog.csdn.net/wangjieest/article/details/7065457
@@ -30,12 +34,17 @@ const int BUTTON4 = 3304;
 const int JC_BUTTON = 3305; 
 const int PASSWD_BUTTON = 3306; 
 const int KEYBORADHOOK_BUTTON = 3307;
+const int SETFIRST_BUTTON = 3308; 
+const int SETTOUM_BUTTON = 3309;
+const int MOVESHUTDOWN_BUTTON = 3310;
 LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
+LPCSTR TISHIYU = "请您认真阅读并充分理解以下内容\n本软件仅以学习交流为目的，请勿用于任何非法用途.本软件的所有功能均只可以用于课堂辅助，禁止用于干坏事.\n事先声明，因使用本软件造成的一切后果与作者无关，如做不到请自行删除本软件.\n一旦您选择是即表示您已经阅读并且同意与此工具开发者达成上述协议";
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL, threadSetWindowName = NULL;
-HWND mythwaretext = NULL, guangbotext = NULL, SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL; 
+HWND mythwaretext = NULL, guangbotext = NULL;
+HWND SuspendB = NULL, ResumeB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL, SetFirstB = NULL, SetToumB = NULL, MoveShutdownB = NULL; 
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
 
@@ -160,7 +169,13 @@ BOOL CALLBACK EnumChildWindowsTest(HWND hwndChild, LPARAM lParam) {
 }
 
 VOID CALLBACK SetWindowToTop(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
-	SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	LRESULT res = SendMessage(SetFirstB, BM_GETSTATE, 0, 0);
+	if (res == BST_CHECKED) {
+		SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	}
+	else {
+		SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	} 
 	return; 
 } 
 
@@ -179,6 +194,7 @@ VOID SetClipboard(LPCSTR str) {
 
 
 unsigned int __stdcall IsStart(LPVOID lParam) {
+	bool FlagSetToum = false, FlagMoveShutdown = false;
 	while(1) {
 		Class = FindWindowW(NULL, BroadcastTitle);
 		if (Class != NULL) {
@@ -209,6 +225,40 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			Buttonable(FALSE, 1);
 			CloseHandle(MythwareHandle);
 			SetWindowText(mythwaretext, "极域未开启");
+		}
+		
+		LRESULT res = SendMessage(SetToumB, BM_GETSTATE, 0, 0);
+		if ((res == BST_CHECKED) != FlagSetToum) {
+			FlagSetToum = (res == BST_CHECKED);
+			if (res == BST_CHECKED) {
+				SetLayeredWindowAttributes(HWND(lParam), 0, 150, LWA_ALPHA);
+				//MessageBox(NULL, "点击", "透明", 0); 
+			}
+			else {
+				SetLayeredWindowAttributes(HWND(lParam), 0, 255, LWA_ALPHA);
+				//MessageBox(NULL, "点击", "不透明", 0); 
+			}
+		}
+		
+		int res1 = _taccess("C:\\Program Files (x86)\\Mythware\\极域电子教室软件 v4.0 2015 豪华版\\Shutdown.exe", F_OK);
+		int res2 = _taccess("C:\\Program Files (x86)\\Mythware\\极域电子教室软件 v4.0 2015 豪华版\\hhh\\Shutdown.exe", F_OK);
+		if (res1 == -1 && res2 == -1 && FlagMoveShutdown == true) {
+			FlagMoveShutdown == false;
+			EnableWindow(MoveShutdownB, FALSE);
+			SetWindowText(MoveShutdownB, "未检测到Shutdown文件");
+		}
+		else {
+			if (res1 == 0 && FlagMoveShutdown == false) {
+				//printf("_taccess返回 0\n");
+				FlagMoveShutdown = true;
+				EnableWindow(MoveShutdownB, TRUE);
+				SetWindowText(MoveShutdownB, "开启防教师端关机");
+			}
+			else if (res2 == 0 && FlagMoveShutdown == true) {
+				FlagMoveShutdown = false;
+				EnableWindow(MoveShutdownB, TRUE);
+				SetWindowText(MoveShutdownB, "关闭防教师端关机");
+			}
 		}
 		//printf("%u\n", pid);
 	}
@@ -274,15 +324,33 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			break;
 		}
 		case WM_CREATE: {
-			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 170, 10, 150, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 70, 150, 50, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
-			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 130, 150, 50, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
-			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 50, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
-			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 70, 150, 50, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
-			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 190, 150, 50, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
+			//SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);//设置为后台程序 
+			
+			SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
+			SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
+			
+			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 170, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
+			ResumeB = CreateWindow(TEXT("button"), TEXT("恢复"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(RESUME_BUTTON), HINSTANCE(hwnd), NULL);
+			KillB = CreateWindow(TEXT("button"), TEXT("杀死"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
+			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 50, 150, 30, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
+			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 30, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
+			MoveShutdownB = CreateWindow(TEXT("button"), TEXT("开启防教师端关机"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 130, 150, 30, hwnd, HMENU(MOVESHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
+
+			
 			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 190, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			SendMessage(KeyboradHookB, BM_SETCHECK, BST_CHECKED, 0);
 			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 190, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			
+			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 220, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
+			SendMessage(SetFirstB, BM_SETCHECK, BST_CHECKED, 0);
+			CreateWindow(TEXT("static"), TEXT("置顶窗口"), WS_VISIBLE | WS_CHILD, 30, 220, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			
+			SetToumB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 250, 15, 15, hwnd, HMENU(SETTOUM_BUTTON), HINSTANCE(hwnd), NULL);
+			//SendMessage(SetToumB, BM_SETCHECK, BST_CHECKED, 0);
+			CreateWindow(TEXT("static"), TEXT("透明化窗口（失去焦点后起效）"), WS_VISIBLE | WS_CHILD, 30, 250, 230, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			
 			break;
 		} 
 		/* Upon destruction, tell the main thread to stop */
@@ -300,10 +368,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 				}
 				case KILL_BUTTON: {
 					//TerminateThread(MythwareHandle, 0);
-					char pidtemp[15], tempstr[50] = "ntsd -c q -p ";
-					_itoa(pid, pidtemp, 10);
-					strcat(tempstr, pidtemp);
-					puts(tempstr);
+					char pidtemp[15], tempstr[50] = "./ntsd -c q -pn studentmain.exe";
 					WinExec(tempstr, SW_HIDE);
 					break;
 				}
@@ -345,6 +410,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
+	
+//	if(MessageBox(NULL, TISHIYU, "提示", MB_YESNO | MB_ICONWARNING) != IDYES) {
+//		return 0;
+//	}			
+	
 	WNDCLASSEX wc; /* A properties struct of our window */
 	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
 	MSG msg; /* A temporary location for all messages */
@@ -371,7 +441,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CW_USEDEFAULT, /* x */
 		CW_USEDEFAULT, /* y */
 		350, /* width */
-		280, /* height */
+		300, /* height */
 		NULL,NULL,hInstance,NULL);
 
 	if(hwnd == NULL) {
@@ -389,6 +459,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, 0, 0);
 	threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
 	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
+	
 	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
