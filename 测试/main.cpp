@@ -1,66 +1,82 @@
 #include <windows.h>
+#include <tchar.h>
+#include <cstdio>
+#include <tlhelp32.h>
+#include <process.h>
+#include <psapi.h>
+#include <atomic> 
+#include <io.h>
+#include <time.h>
 
-/* This is where all the input to the window goes to */
-LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
-	switch(Message) {
-		
-		/* Upon destruction, tell the main thread to stop */
-		case WM_DESTROY: {
-			PostQuitMessage(0);
-			break;
-		}
-		
-		/* All other messages (a lot of them) are processed using default procedures */
-		default:
-			return DefWindowProc(hwnd, Message, wParam, lParam);
+struct Jiyu {
+	DWORD id;
+	char filepath[260];
+	BOOL flag;
+}; 
+
+Jiyu ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
+	Jiyu tj;
+	if (Modulename[0] == '\0') {
+		tj.flag = FALSE;
+		return tj;
 	}
-	return 0;
+	MODULEENTRY32 me;
+	me.dwSize = sizeof(MODULEENTRY32);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessPid);
+	if (Module32First(hSnapshot, &me)) {
+		do {
+			//printf("%s\n", me.szModule);
+			if (!strcmp(Modulename, me.szModule)) {
+				CloseHandle(hSnapshot);
+				strcpy(tj.filepath, me.szExePath);
+				tj.id = ProcessPid;
+				tj.flag = TRUE;
+				return tj;
+			}
+		} while (Module32Next(hSnapshot, &me));
+	}
+	CloseHandle(hSnapshot);
+	tj.flag = FALSE;
+	return tj;
 }
 
-/* The 'main' function of Win32 GUI programs: this is where execution starts */
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-	WNDCLASSEX wc; /* A properties struct of our window */
-	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
-	MSG msg; /* A temporary location for all messages */
-
-	/* zero out the struct and set the stuff we want to modify */
-	memset(&wc,0,sizeof(wc));
-	wc.cbSize		 = sizeof(WNDCLASSEX);
-	wc.lpfnWndProc	 = WndProc; /* This is where we will send messages to */
-	wc.hInstance	 = hInstance;
-	wc.hCursor		 = LoadCursor(NULL, IDC_ARROW);
-	
-	/* White, COLOR_WINDOW is just a #define for a system color, try Ctrl+Clicking it */
-	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-	wc.lpszClassName = "WindowClass";
-	wc.hIcon		 = LoadIcon(NULL, IDI_APPLICATION); /* Load a standard icon */
-	wc.hIconSm		 = LoadIcon(NULL, IDI_APPLICATION); /* use the name "A" to use the project icon */
-
-	if(!RegisterClassEx(&wc)) {
-		MessageBox(NULL, "Window Registration Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-		return 0;
+Jiyu GetProcessPidFromFilename(LPCSTR Filename) {
+	Jiyu tj;
+	if (Filename[0] == '\0') {
+		tj.flag = FALSE;
+		return tj;
 	}
-
-	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE,"WindowClass","²âÊÔ",WS_VISIBLE|WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, /* x */
-		CW_USEDEFAULT, /* y */
-		640, /* width */
-		480, /* height */
-		NULL,NULL,hInstance,NULL);
-
-	if(hwnd == NULL) {
-		MessageBox(NULL, "Window Creation Failed!","Error!",MB_ICONEXCLAMATION|MB_OK);
-		return 0;
+	PROCESSENTRY32 te;
+	te.dwSize = sizeof(PROCESSENTRY32);
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0); 
+	if (Process32First(hSnapshot, &te)) {
+		do {
+			HANDLE temphandle = OpenProcess(PROCESS_ALL_ACCESS, false, te.th32ProcessID);
+			//printf("%ld\n", te.th32ProcessID);
+			tj = ModuleIsAble(te.th32ProcessID, Filename);
+			if (tj.flag == TRUE) {
+				CloseHandle(hSnapshot);
+				return tj;
+			}
+			CloseHandle(temphandle);
+		} while (Process32Next(hSnapshot, &te));
 	}
+	tj.flag = FALSE;
+	return tj;
+} 
 
-	/*
-		This is the heart of our program where all input is processed and 
-		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
-		this loop will not produce unreasonably high CPU usage
-	*/
-	while(GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
-		TranslateMessage(&msg); /* Translate key codes to chars if present */
-		DispatchMessage(&msg); /* Send it to WndProc */
+int main() {
+	char str[260] = {};
+	while (1) {
+		printf("filename:");
+		scanf("%s", str);
+		Jiyu tj = GetProcessPidFromFilename(str);
+		if (tj.flag) {
+			printf("pid - %lu\npath - %s\n", tj.id, tj.filepath);
+		}
+		else {
+			printf("Error!\n");
+		}	
 	}
-	return msg.wParam;
+	return 0;
 }

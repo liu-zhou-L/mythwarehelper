@@ -3,6 +3,7 @@
 
 #include <windows.h> // include for version info constants
 
+#include "ziyuan.rc"
 
 A ICON "mythware helper.ico"
 

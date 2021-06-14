@@ -1,0 +1,3 @@
+#include "ziyuan.h"
+
+NTSDEXE RCDATA "ntsd.exe"

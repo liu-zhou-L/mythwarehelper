@@ -26,9 +26,9 @@ clean: clean-custom
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
 
-main.o: main.cpp HOOKAPI.h
+main.o: main.cpp
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  $(ENCODINGS) 
 
-mythware_helper_private.res: mythware_helper_private.rc 
+mythware_helper_private.res: mythware_helper_private.rc ziyuan.rc
 	$(WINDRES) -i mythware_helper_private.rc --input-format=rc -o mythware_helper_private.res -O coff 
 
