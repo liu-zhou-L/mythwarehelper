@@ -397,7 +397,7 @@ VOID UseNtsd() {
 	if (!(fopen("ntsd.exe", "r") == NULL)) {
 		return;
 	}
-	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCEA(5678), TEXT("RCDATA"));
+	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCEA(NTSDEXE), TEXT("EXETYPE"));
 	if (hRsrc == NULL) {
 		puts("资源文件查找失败");
 		printf("错误代码%u\n", GetLastError());
@@ -409,7 +409,7 @@ VOID UseNtsd() {
 	FILE* fp = fopen("ntsd.exe", "wb");
 	if (fp != NULL) {
 		fwrite(pBuffer, sizeof(char), dwSize, fp);
-		puts("写ntsd成功");
+		printf("写ntsd成功");
 	}
 	fclose(fp);
 	return;
@@ -422,6 +422,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 		}
 		case WM_DESTROY: {
+			remove("ntsd.exe");
 			CloseHandle(threadisstart);
 			CloseHandle(threadKeyboradHook);
 			CloseHandle(threadSetWindowName);
