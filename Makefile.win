@@ -1,5 +1,5 @@
 # Project: mythware helper
-# Makefile created by Dev-C++ 6.6
+# Makefile created by Dev-C++ 6.4-beta3
 
 CPP      = g++.exe
 CC       = gcc.exe
@@ -26,7 +26,7 @@ clean: clean-custom
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
 
-main.o: main.cpp
+main.o: main.cpp ziyuan.h
 	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  $(ENCODINGS) 
 
 mythware_helper_private.res: mythware_helper_private.rc ziyuan.rc

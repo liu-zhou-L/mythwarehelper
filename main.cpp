@@ -88,7 +88,7 @@ Jiyu ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, ProcessPid);
 	if (Module32First(hSnapshot, &me)) {
 		do {
-			printf("thread - %s\n", me.szModule);
+			//printf("thread - %s\n", me.szModule);
 			if (!strcmp(Modulename, me.szModule)) {
 				CloseHandle(hSnapshot);
 				strcpy(tj.filepath, me.szExePath);
@@ -188,13 +188,30 @@ BOOL CALLBACK EnumChildWindowsTest(HWND hwndChild, LPARAM lParam) {
 	return TRUE;
 }
 
-VOID CALLBACK SetWindowToTop(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
+VOID CALLBACK SetWindowToTopT(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
 	LRESULT res = SendMessage(SetFirstB, BM_GETSTATE, 0, 0);
 	if (res == BST_CHECKED) {
 		SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 	} else {
 		SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 	}
+	return;
+}
+
+VOID CALLBACK SetHideorShowT(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
+	POINT tm;
+	GetCursorPos(&tm);
+	int tsx = GetSystemMetrics(SM_CXSCREEN);   
+	int tsy = GetSystemMetrics(SM_CYSCREEN);
+	if (tm.x == tsx - 1 && tm.y == tsy - 1) {
+		ShowWindow(hwnd, SW_HIDE);
+		SetCursorPos(tsx / 2, tsy / 2);
+	} 
+	else if (tm.x == tsx - 1 && tm.y == 0) {
+		ShowWindow(hwnd, SW_RESTORE);
+		SetCursorPos(tsx / 2, tsy / 2);
+	}
+	//printf("MOUSE(%d, %d) SCREEN(%d, %d)\n", tm.x, tm.y, tsx, tsy);
 	return;
 }
 
@@ -423,8 +440,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		}
 		case WM_CREATE: {
 
-			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL, VK_F2);
-			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL, VK_F1);
+			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL | MOD_ALT, 83);
+			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL | MOD_ALT, 72);
 			SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);//设置为后台程序
 
 			//SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
@@ -555,7 +572,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-
+	SetProcessDPIAware();
 	if (MessageBox(NULL, TISHIYU, "提示", MB_YESNO | MB_ICONWARNING) != IDYES) {
 		return 0;
 	}
@@ -599,18 +616,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
 		this loop will not produce unreasonably high CPU usage
 	*/
-	SetProcessDPIAware();
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
 	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, 0, 0);
 	threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
-	UINT_PTR timeid = SetTimer(hwnd, 1, 1, SetWindowToTop);
+	UINT_PTR timeid1 = SetTimer(hwnd, 1, 1, SetWindowToTopT);
+	UINT_PTR timeid2 = SetTimer(hwnd, 2, 1, SetHideorShowT);
 	while (GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */
 		TranslateMessage(&msg); /* Translate key codes to chars if present */
 		DispatchMessage(&msg); /* Send it to WndProc */
 		//EnumWindows(FindWindow, 0);
 	}
-	KillTimer(NULL, timeid);
+	KillTimer(NULL, timeid1);
+	KillTimer(NULL, timeid2);
 	return msg.wParam;
 }
