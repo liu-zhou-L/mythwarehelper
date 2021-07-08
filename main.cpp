@@ -7,7 +7,7 @@
 #include <atomic>
 #include <io.h>
 #include <time.h>
-#include <versionhelpers.h> 
+#include <versionhelpers.h>
 #include <shellscalingapi.h>
 #include "ziyuan.h"
 
@@ -39,8 +39,10 @@ const int SETFIRST_BUTTON = 3308;
 const int SETTOUM_BUTTON = 3309;
 const int MOVESHUTDOWN_BUTTON = 3310;
 const int YINC_BUTTON = 3311;
+const int GETREGEDITPASSWD_BUTTON = 3312;
 const int ID_ACCR_SHOW = 1001;
 const int ID_ACCR_HIDE = 1002;
+const int WM_MSG =  RegisterWindowMessage("postmessage");
 CRITICAL_SECTION CSPID;
 LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
@@ -49,9 +51,10 @@ LPCSTR TISHIYU = "请您认真阅读并充分理解以下内容\n本软件仅以
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL, threadSetWindowName = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, mythwareversiontext = NULL;
-HWND SuspendB = NULL, RebootB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, YinCB = NULL;
+HWND SuspendB = NULL, RebootB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, YinCB = NULL, GetRegeditPassWdB = NULL;
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
+NOTIFYICONDATA m_nid;
 
 DWORD GetMainThreadFromId(const DWORD IdProcess) {
 	if (IdProcess <= 0) return 0;
@@ -128,6 +131,63 @@ Jiyu GetProcessPidFromFilename(LPCSTR Filename) {
 	return tj;
 }
 
+BOOL GetMythwarePasswordFromRegedit(char *str) {
+	HKEY retKey;
+	BYTE retKeyVal[MAX_PATH * 10] = { 0 };
+	DWORD nSize = MAX_PATH * 10;
+	LONG ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\TopDomain\\e-Learning Class\\Student", 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	ret = RegQueryValueExA(retKey, "knock1", NULL, NULL, (LPBYTE)retKeyVal, &nSize);
+	RegCloseKey(retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	for (int i = 0; i < int(nSize); i += 4) {
+		retKeyVal[i + 0] = (retKeyVal[i + 0] ^ 0x50 ^ 0x45);
+		retKeyVal[i + 1] = (retKeyVal[i + 1] ^ 0x43 ^ 0x4c);
+		retKeyVal[i + 2] = (retKeyVal[i + 2] ^ 0x4c ^ 0x43);
+		retKeyVal[i + 3] = (retKeyVal[i + 3] ^ 0x45 ^ 0x50);
+	}
+	int sum = 0;
+	for (int i = 0; i < int(nSize); i += 1) {
+		if (retKeyVal[i + 1] == 0) {
+			*(str + sum) = retKeyVal[i];
+			sum++;
+			if (retKeyVal[i + 2] == 0 && retKeyVal[i + 3] == 0) break;
+		}
+	}
+	return TRUE;
+}
+
+
+bool SetupTrayIcon(HWND m_hWnd) {
+	m_nid.cbSize = sizeof(NOTIFYICONDATA); // 结构大小
+	m_nid.hWnd = m_hWnd; // 接收 托盘通知消息 的窗口句柄
+	m_nid.uID = 1231;
+	m_nid.uFlags = NIF_MESSAGE; //表示uCallbackMessage 有效
+	m_nid.uCallbackMessage = WM_MSG; // 消息被发送到此窗口过程
+	m_nid.hIcon = ::LoadIcon(::GetModuleHandle(NULL), MAKEINTRESOURCE(1231));
+	strcpy(m_nid.szTip, "我的任务栏程序");             // 提示文本
+	return 0 != Shell_NotifyIcon(NIM_ADD, &m_nid);
+}
+
+BOOL ShowBalloonTip(LPCTSTR szMsg, LPCTSTR szTitle, DWORD dwInfoFlags = NIIF_INFO, UINT uTimeout = 1)  {
+	m_nid.cbSize = sizeof(NOTIFYICONDATA);
+	m_nid.uFlags = NIF_INFO;
+	m_nid.uVersion = NOTIFYICON_VERSION;
+	m_nid.uTimeout = uTimeout;
+	m_nid.dwInfoFlags = dwInfoFlags;
+	strcpy(m_nid.szInfo, szMsg ? szMsg : _T(""));
+	strcpy(m_nid.szInfoTitle, szTitle ? szTitle : _T(""));
+
+	return 0 != Shell_NotifyIcon(NIM_MODIFY, &m_nid);
+}
+//————————————————
+//版权声明：本文为CSDN博主「江南-一苇渡江」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+//原文链接：https://blog.csdn.net/wangshubo1989/article/details/49533051
+
 void Buttonable(BOOL FLAG, WORD WEI) {
 	switch (WEI) {
 		case 1: {
@@ -201,13 +261,12 @@ VOID CALLBACK SetWindowToTopT(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTi
 VOID CALLBACK SetHideorShowT(HWND hwnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime) {
 	POINT tm;
 	GetCursorPos(&tm);
-	int tsx = GetSystemMetrics(SM_CXSCREEN);   
+	int tsx = GetSystemMetrics(SM_CXSCREEN);
 	int tsy = GetSystemMetrics(SM_CYSCREEN);
 	if (tm.x == tsx - 1 && tm.y == tsy - 1) {
 		ShowWindow(hwnd, SW_HIDE);
 		SetCursorPos(tsx / 2, tsy / 2);
-	} 
-	else if (tm.x == tsx - 1 && tm.y == 0) {
+	} else if (tm.x == tsx - 1 && tm.y == 0) {
 		ShowWindow(hwnd, SW_RESTORE);
 		SetCursorPos(tsx / 2, tsy / 2);
 	}
@@ -422,6 +481,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 		}
 		case WM_DESTROY: {
+			Shell_NotifyIcon(NIM_DELETE, &m_nid);
 			remove("ntsd.exe");
 			CloseHandle(threadisstart);
 			CloseHandle(threadKeyboradHook);
@@ -440,7 +500,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			return 1;
 		}
 		case WM_CREATE: {
-
+			SetupTrayIcon(hwnd);
 			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL | MOD_ALT, 83);
 			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL | MOD_ALT, 72);
 			SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_TOOLWINDOW);//设置为后台程序
@@ -450,25 +510,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 170, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			mythwareversiontext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 200, 300, 50, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			mythwareversiontext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 230, 300, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 50, 150, 30, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
+			GetRegeditPassWdB = CreateWindow(TEXT("button"), TEXT("复制密码（注册表）"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 130, 150, 30, hwnd, HMENU(GETREGEDITPASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 30, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			YinCB = CreateWindow(TEXT("button"), TEXT("隐藏窗体"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(YINC_BUTTON), HINSTANCE(hwnd), NULL);
 			EnableWindow(MoveShutdownB, FALSE);
 
-			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 130, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 160, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(KeyboradHookB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 130, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 160, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
-			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 150, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
+			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 180, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetFirstB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("置顶窗口"), WS_VISIBLE | WS_CHILD, 30, 150, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("置顶窗口"), WS_VISIBLE | WS_CHILD, 30, 180, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
-			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 170, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
+			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 200, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetCannotShutdownB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 170, 210, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 200, 210, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
 			break;
 		}
@@ -561,6 +622,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					ShowWindow(hwnd, SW_HIDE);
 					break;
 				}
+				case GETREGEDITPASSWD_BUTTON: {
+					char str[MAX_PATH * 10] = {0};
+					if (GetMythwarePasswordFromRegedit(str) != FALSE) {
+						ShowBalloonTip("复制密码成功", "提示");
+						SetClipboard(str);
+					} else {
+						ShowBalloonTip("复制密码失败", "提示");
+					}
+					break;
+				}
 			}
 			break;
 		}
@@ -611,7 +682,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageBox(NULL, "Window Creation Failed!", "Error!", MB_ICONEXCLAMATION | MB_OK);
 		return 0;
 	}
-	
+
 	/*
 		This is the heart of our program where all input is processed and
 		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so

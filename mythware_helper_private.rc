@@ -21,7 +21,7 @@ FILETYPE VFT_APP
     {
       VALUE "CompanyName", ""
       VALUE "FileVersion", "1.0.0.0"
-      VALUE "FileDescription", "Mythware helper from liu_zhou"
+      VALUE "FileDescription", "Mythware helper"
       VALUE "InternalName", "Mythware helper"
       VALUE "LegalCopyright", ""
       VALUE "LegalTrademarks", ""

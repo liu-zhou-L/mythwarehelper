@@ -12,7 +12,7 @@
 #define VER_BUILD	0
 #define COMPANY_NAME	""
 #define FILE_VERSION	"1.0.0.0"
-#define FILE_DESCRIPTION	"Mythware helper from liu_zhou"
+#define FILE_DESCRIPTION	"Mythware helper"
 #define INTERNAL_NAME	"Mythware helper"
 #define LEGAL_COPYRIGHT	""
 #define LEGAL_TRADEMARKS	""
