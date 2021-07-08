@@ -47,7 +47,9 @@ CRITICAL_SECTION CSPID;
 LPCWSTR BroadcastTitle = L"屏幕广播";
 LPCSTR MythwareFilename = "StudentMain.exe";
 LPCWSTR MythwareTitle = L"StudentMain.exe";
-LPCSTR TISHIYU = "请您认真阅读并充分理解以下内容\n本软件仅以学习交流为目的，请勿用于任何非法用途.本软件的所有功能均只可以用于课堂辅助，禁止用于干坏事.\n事先声明，因使用本软件造成的一切后果与作者无关，如做不到请自行删除本软件.\n一旦您选择是即表示您已经阅读并且同意与此工具开发者达成上述协议";
+LPCSTR TISHIYU = "请您认真阅读并充分理解以下内容\n本软件仅以学习交流为目的，请勿用于任何非法用途.本软件的所有功能均只可以用于课堂辅助，禁止用于干坏事.\n事先声明，因使用本软件造成的一切后果与作者无关，由直接使用者承担责任，如做不到请自行删除本软件.\n一旦您选择是即表示您已经阅读并且同意与此工具开发者达成上述协议";
+
+char TempWorkPath[MAX_PATH + 1];
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL, threadSetWindowName = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, mythwareversiontext = NULL;
@@ -161,6 +163,37 @@ BOOL GetMythwarePasswordFromRegedit(char *str) {
 	return TRUE;
 }
 
+BOOL SetRegedit(char *str, char *ValueName, char *Value) {
+	HKEY retKey;
+	char tstr[200] = "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\";
+	strcat(tstr, str);
+	LONG ret = RegCreateKey(HKEY_LOCAL_MACHINE, tstr, &retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	ret = RegSetValueEx(retKey,             // sub key handle 
+	            ValueName,       // value name 
+	            0,                        // must be zero 
+	            REG_EXPAND_SZ,            // value type 
+	            (LPBYTE)Value,           // pointer to value data 
+	            strlen(Value) + 1);       // length of value
+	if (ret != ERROR_SUCCESS) {
+	   	return FALSE;
+	}         
+	RegCloseKey(retKey);
+	return TRUE;
+}
+
+BOOL RegeditHasSet(char *str, char *ValueName, char *Value) {
+	HKEY retKey;
+	char tstr[200] = "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\";
+	strcat(tstr, str);
+	LONG ret = RegCreateKey(HKEY_LOCAL_MACHINE, tstr, &retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	
+}
 
 bool SetupTrayIcon(HWND m_hWnd) {
 	m_nid.cbSize = sizeof(NOTIFYICONDATA); // 结构大小
@@ -452,14 +485,16 @@ VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
 	}
 }
 
+char TempNtsdPath[MAX_PATH + 1];
+
 VOID UseNtsd() {
 	if (!(fopen("ntsd.exe", "r") == NULL)) {
 		return;
 	}
 	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCEA(NTSDEXE), TEXT("EXETYPE"));
 	if (hRsrc == NULL) {
-		puts("资源文件查找失败");
-		printf("错误代码%u\n", GetLastError());
+//		puts("资源文件查找失败");
+//		printf("错误代码%u\n", GetLastError());
 		return;
 	}
 	DWORD dwSize = SizeofResource(NULL, hRsrc);
@@ -468,21 +503,25 @@ VOID UseNtsd() {
 	FILE* fp = fopen("ntsd.exe", "wb");
 	if (fp != NULL) {
 		fwrite(pBuffer, sizeof(char), dwSize, fp);
-		printf("写ntsd成功");
+//		printf("写ntsd成功");
 	}
 	fclose(fp);
 	return;
 }
 
+//int GetMythwarePortFromPid(int pid) {
+//	popen("ls", "r");
+//	return port;
+//}
+
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 	switch (Message) {
 		case WM_CLOSE: {
-
+			remove("ntsd.exe");
 		}
 		case WM_DESTROY: {
 			Shell_NotifyIcon(NIM_DELETE, &m_nid);
-			remove("ntsd.exe");
 			CloseHandle(threadisstart);
 			CloseHandle(threadKeyboradHook);
 			CloseHandle(threadSetWindowName);
@@ -499,7 +538,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			}
 			return 1;
 		}
+		case WM_CTLCOLORSTATIC: {
+			HDC hdcStatic = (HDC)wParam;
+			SetBkMode(hdcStatic, TRANSPARENT); //透明背景
+			return (INT_PTR)GetStockObject(NULL_BRUSH); //无颜色画刷
+		}
 		case WM_CREATE: {
+			
 			SetupTrayIcon(hwnd);
 			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL | MOD_ALT, 83);
 			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL | MOD_ALT, 72);
@@ -508,9 +553,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			//SetWindowLong(hwnd, GWL_EXSTYLE, WS_EX_LAYERED);
 			//SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
 
-			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 170, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			mythwareversiontext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD, 10, 230, 300, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 170, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			mythwareversiontext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("from liu_zhou"),  WS_VISIBLE | WS_CHILD, 10, 310, 300, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 50, 150, 30, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
@@ -519,17 +565,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			YinCB = CreateWindow(TEXT("button"), TEXT("隐藏窗体"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(YINC_BUTTON), HINSTANCE(hwnd), NULL);
 			EnableWindow(MoveShutdownB, FALSE);
 
-			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 160, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 170, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(KeyboradHookB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 160, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 170, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
-			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 180, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
+			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 190, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetFirstB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("置顶窗口"), WS_VISIBLE | WS_CHILD, 30, 180, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("置顶窗口"), WS_VISIBLE | WS_CHILD, 30, 190, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
-			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 200, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
+			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetCannotShutdownB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 200, 210, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("通过对话框拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 210, 250, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
 			break;
 		}
@@ -576,6 +622,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					if (strcmp(tstr, "杀死极域") == 0) {
 						UseNtsd();
 						WinExec("./ntsd -c q -pn studentmain.exe", SW_HIDE);
+						
 						SetWindowText(KillB, "重启极域");
 					} else if (strcmp(tstr, "重启极域") == 0) {
 						EnterCriticalSection(&CSPID);
@@ -645,6 +692,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	SetProcessDPIAware();
+	if ()
 	if (MessageBox(NULL, TISHIYU, "提示", MB_YESNO | MB_ICONWARNING) != IDYES) {
 		return 0;
 	}
@@ -675,7 +723,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	                      CW_USEDEFAULT, /* x */
 	                      CW_USEDEFAULT, /* y */
 	                      350, /* width */
-	                      295, /* height */
+	                      365, /* height */
 	                      NULL, NULL, hInstance, NULL);
 
 	if (hwnd == NULL) {
@@ -688,6 +736,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
 		this loop will not produce unreasonably high CPU usage
 	*/
+	GetTempPath(MAX_PATH, TempWorkPath);
+	SetCurrentDirectory(TempWorkPath); 
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);

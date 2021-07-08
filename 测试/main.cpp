@@ -65,53 +65,29 @@ Jiyu GetProcessPidFromFilename(LPCSTR Filename) {
 	return tj;
 } 
 
-int main() {
+BOOL SetRegedit(char *str, char *ValueName, char *Value) {
 	HKEY retKey;
-	BYTE retKeyVal[MAX_PATH * 10] = { 0 };
-	DWORD nSize = MAX_PATH * 10;
-	LONG ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\TopDomain\\e-Learning Class\\Student", 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &retKey);
+	char tstr[200] = "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\";
+	strcat(tstr, str);
+	LONG ret = RegCreateKey(HKEY_LOCAL_MACHINE, tstr, &retKey);
 	if (ret != ERROR_SUCCESS) {
-		printf("打开失败");
-		getchar();
-		return 0; 
+		return FALSE;
 	}
-	ret = RegQueryValueExA(retKey, "knock1", NULL, NULL, (LPBYTE)retKeyVal, &nSize);
+	ret = RegSetValueEx(retKey,             // sub key handle 
+	            ValueName,       // value name 
+	            0,                        // must be zero 
+	            REG_EXPAND_SZ,            // value type 
+	            (LPBYTE)Value,           // pointer to value data 
+	            strlen(Value) + 1);       // length of value
+	if (ret != ERROR_SUCCESS) {
+	   	return FALSE;
+	}         
 	RegCloseKey(retKey);
-	if (ret != ERROR_SUCCESS) {
-		printf("读取失败");
-		getchar();
-		return 0; 
-	}
-	puts("\n注册表键值");
-	for(int i = 0; i < int(nSize); i += 1) {
-		printf("%x ", retKeyVal[i]);
-		if ((i + 1) % 8 == 0) {
-			puts("");
-		}
-	}
-	for (int i = 0; i < int(nSize); i += 4) {
-		retKeyVal[i + 0] = (retKeyVal[i + 0] ^ 0x50 ^ 0x45);
-		retKeyVal[i + 1] = (retKeyVal[i + 1] ^ 0x43 ^ 0x4c);
-		retKeyVal[i + 2] = (retKeyVal[i + 2] ^ 0x4c ^ 0x43);
-		retKeyVal[i + 3] = (retKeyVal[i + 3] ^ 0x45 ^ 0x50);
-	}
-	puts("\n破解注册表键值");
-	for(int i = 0; i < int(nSize); i += 1) {
-		printf("%x ", retKeyVal[i]);
-		if ((i + 1) % 8 == 0) {
-			puts("");
-		}
-	}
-	puts("\n明文");
-	int sum = 0;
-	for(int i = 0; i < int(nSize); i += 1) {
-		if (retKeyVal[i + 1] == 0) {
-			printf("%c ", retKeyVal[i]);
-			sum++;
-			if (retKeyVal[i + 2] == 0) break;
-		}		
-	}
-	printf("sum=%d", sum);
+	return TRUE;
+}
+
+int main() {
+	puts(SetRegedit("MythwareHelper", "agree", "yes") ? "succes" : "fail");
 	getchar();
 	return 0;
 }
