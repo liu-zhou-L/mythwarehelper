@@ -184,15 +184,20 @@ BOOL SetRegedit(char *str, char *ValueName, char *Value) {
 	return TRUE;
 }
 
-BOOL RegeditHasSet(char *str, char *ValueName, char *Value) {
+BOOL IsRegeditHasSet(char *str, char *ValueName) {
 	HKEY retKey;
 	char tstr[200] = "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\";
 	strcat(tstr, str);
-	LONG ret = RegCreateKey(HKEY_LOCAL_MACHINE, tstr, &retKey);
+	DWORD dwDisposition = REG_OPENED_EXISTING_KEY;
+	LONG ret = RegCreateKeyEx(HKEY_LOCAL_MACHINE, tstr, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &retKey, &dwDisposition);
 	if (ret != ERROR_SUCCESS) {
 		return FALSE;
 	}
-	
+	ret = RegQueryValueEx(retKey, ValueName, NULL, NULL, NULL, NULL);
+	if (ret == ERROR_SUCCESS) {
+		return TRUE;
+	}
+	return FALSE;
 }
 
 bool SetupTrayIcon(HWND m_hWnd) {
@@ -692,10 +697,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 /* The 'main' function of Win32 GUI programs: this is where execution starts */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	SetProcessDPIAware();
-	if ()
-	if (MessageBox(NULL, TISHIYU, "提示", MB_YESNO | MB_ICONWARNING) != IDYES) {
-		return 0;
+	if (!IsRegeditHasSet("MythwareHelper", "agree")) {
+		if (MessageBox(NULL, TISHIYU, "提示", MB_YESNO | MB_ICONWARNING) != IDYES) {
+			return 0;
+		}
+		if (!SetRegedit("MythwareHelper", "agree", "yes")) {
+			MessageBox(NULL, "写注册表失败，请尝试以管理员权限重新运行本程序，除此以外本程序不需要以管理员权限运行", "提示", MB_OK);
+			return 0; 
+		}
 	}
+	
 //	原文链接：https://blog.csdn.net/awlp1990/article/details/51564379
 	WNDCLASSEX wc; /* A properties struct of our window */
 	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
