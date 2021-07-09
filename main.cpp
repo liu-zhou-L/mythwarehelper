@@ -580,7 +580,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetCannotShutdownB, BM_SETCHECK, BST_CHECKED, 0);
-			CreateWindow(TEXT("static"), TEXT("通过对话框拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 210, 250, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 210, 180, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
 			break;
 		}
@@ -634,7 +634,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 						UINT res = WinExec(jiyu.filepath, SW_HIDE);
 						LeaveCriticalSection(&CSPID);
 						if (res <= 32) {
-							MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
+							//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
+							ShowBalloonTip("重启极域失败!无法获取极域路径", "提示");
 						} else {
 							SetWindowText(KillB, "杀死极域");
 						}
