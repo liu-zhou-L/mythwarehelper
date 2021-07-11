@@ -34,7 +34,7 @@ const int KILL_BUTTON = 3303;
 const int SETCANNOTSHUTDOWN_BUTTON = 3304;
 const int JC_BUTTON = 3305;
 const int PASSWD_BUTTON = 3306;
-const int KEYBORADHOOK_BUTTON = 3307;
+const int KEYBOARDHOOK_BUTTON = 3307;
 const int SETFIRST_BUTTON = 3308;
 const int SETTOUM_BUTTON = 3309;
 const int MOVESHUTDOWN_BUTTON = 3310;
@@ -51,9 +51,9 @@ LPCSTR TISHIYU = "请您认真阅读并充分理解以下内容\n本软件仅以
 
 char TempWorkPath[MAX_PATH + 1];
 
-HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboradHook = NULL, threadSetWindowName = NULL;
+HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboardHook = NULL, threadSetWindowName = NULL, KeyBoardHookEvent = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, mythwareversiontext = NULL;
-HWND SuspendB = NULL, RebootB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboradHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, YinCB = NULL, GetRegeditPassWdB = NULL;
+HWND SuspendB = NULL, RebootB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboardHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, YinCB = NULL, GetRegeditPassWdB = NULL;
 HWND Class = NULL, Mythware = NULL;
 DWORD pid;
 NOTIFYICONDATA m_nid;
@@ -263,7 +263,7 @@ void Buttonable(BOOL FLAG, WORD WEI) {
 		}
 		case 2: {
 			EnableWindow(JcB, FLAG);
-			//EnableWindow(KeyboradHookB, FLAG);
+			//EnableWindow(KeyboardHookB, FLAG);
 			break;
 		}
 	}
@@ -404,7 +404,6 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 //		tt_ = clock();
 //		printf("spend - %lf\n", (double)(tt_ - tt) / CLOCKS_PER_SEC);
 		if (tj.flag == TRUE) {
-
 			GetWindowThreadProcessId(Mythware, &tj.id);
 			MythwareHandle = OpenProcess(THREAD_ALL_ACCESS, false, tj.id);
 			Buttonable(TRUE, 1);
@@ -437,29 +436,23 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
 	return CallNextHookEx(NULL, nCode, wParam, lParam);
 }
 
-unsigned int __stdcall KeyboradHook(LPVOID lParam) {
+unsigned int __stdcall KeyboardHook(LPVOID lParam) {
 	HHOOK m_hHOOK1 = NULL, m_hHOOK2 = NULL, m_hHOOK3 = NULL, m_hHOOK4 = NULL;
 	m_hHOOK1 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 	m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 	m_hHOOK3 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 	m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 	while (true) {
-		LRESULT res = SendMessage(KeyboradHookB, BM_GETSTATE, 0, 0);
-		if (res == BST_CHECKED) {
-			UnhookWindowsHookEx(m_hHOOK1);
-			UnhookWindowsHookEx(m_hHOOK3);
-			m_hHOOK1 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
-			m_hHOOK3 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
-			UnhookWindowsHookEx(m_hHOOK2);
-			UnhookWindowsHookEx(m_hHOOK4);
-			m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
-			m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
-		} else {
-			UnhookWindowsHookEx(m_hHOOK1);
-			UnhookWindowsHookEx(m_hHOOK3);
-			UnhookWindowsHookEx(m_hHOOK2);
-			UnhookWindowsHookEx(m_hHOOK4);
-		}
+		WaitForSingleObject(KeyBoardHookEvent, INFINITE);
+		UnhookWindowsHookEx(m_hHOOK1);
+		UnhookWindowsHookEx(m_hHOOK3);
+		m_hHOOK1 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+		m_hHOOK3 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+		UnhookWindowsHookEx(m_hHOOK2);
+		UnhookWindowsHookEx(m_hHOOK4);
+		m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+		m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
+			
 	}
 	return 0;
 }
@@ -511,7 +504,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 		case WM_DESTROY: {
 			Shell_NotifyIcon(NIM_DELETE, &m_nid);
 			CloseHandle(threadisstart);
-			CloseHandle(threadKeyboradHook);
+			CloseHandle(threadKeyboardHook);
 			CloseHandle(threadSetWindowName);
 			DeleteCriticalSection(&CSPID);
 			UnregisterHotKey(hwnd, ID_ACCR_SHOW);
@@ -559,8 +552,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			YinCB = CreateWindow(TEXT("button"), TEXT("隐藏窗体"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(YINC_BUTTON), HINSTANCE(hwnd), NULL);
 			EnableWindow(MoveShutdownB, FALSE);
 
-			KeyboradHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 170, 15, 15, hwnd, HMENU(KEYBORADHOOK_BUTTON), HINSTANCE(hwnd), NULL);
-			SendMessage(KeyboradHookB, BM_SETCHECK, BST_CHECKED, 0);
+			KeyboardHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 170, 15, 15, hwnd, HMENU(KEYBOARDHOOK_BUTTON), HINSTANCE(hwnd), NULL);
+			//SendMessage(KeyboardHookB, BM_SETCHECK, BST_CHECKED, 0);
 			CreateWindow(TEXT("static"), TEXT("解除键盘锁"), WS_VISIBLE | WS_CHILD, 30, 170, 100, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
 
 			SetFirstB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 190, 15, 15, hwnd, HMENU(SETFIRST_BUTTON), HINSTANCE(hwnd), NULL);
@@ -570,7 +563,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetCannotShutdownB, BM_SETCHECK, BST_CHECKED, 0);
 			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 210, 180, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
-
+			
+			KeyBoardHookEvent = CreateEventEx(NULL, "IsSetKeyboardHook", CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
+			ResetEvent(KeyBoardHookEvent);
 			break;
 		}
 		/* Upon destruction, tell the main thread to stop */
@@ -624,6 +619,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 //						LeaveCriticalSection(&CSPID);
 						char tstr[MAX_PATH * 2 + 1];
 						GetWindowText(mythwareversiontext, tstr, MAX_PATH * 2);
+						strcat(tstr, "StudentMain.exe"); 
 						UINT res = WinExec(tstr, SW_HIDE);
 						if (res <= 32) {
 							//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
@@ -647,17 +643,24 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					SetClipboard("mythware_super_password");
 					break;
 				}
-				case KEYBORADHOOK_BUTTON: {
+				case KEYBOARDHOOK_BUTTON: {
 					//MessageBox(NULL, "点击", "点击", 0);
 					printf("%u\n", Message);
-					/*if (flagKeyboradHook.load()) {
-						flagKeyboradHook.store(false);
-						SetWindowText(KeyboradHookB, "解除键盘锁");
+					/*if (flagKeyboardHook.load()) {
+						flagKeyboardHook.store(false);
+						SetWindowText(KeyboardHookB, "解除键盘锁");
 					}
 					else {
-						flagKeyboradHook.store(true);
-						SetWindowText(KeyboradHookB, "恢复键盘锁");
+						flagKeyboardHook.store(true);
+						SetWindowText(KeyboardHookB, "恢复键盘锁");
 					}*/
+					LRESULT res = SendMessage(KeyboardHookB, BM_GETSTATE, 0, 0);
+					if (res == BST_CHECKED) {
+						SetEvent(KeyBoardHookEvent);
+					}
+					else {
+						ResetEvent(KeyBoardHookEvent);
+					}
 					break;
 				}
 				case REBOOT_BUTTON: {
@@ -741,11 +744,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	GetTempPath(MAX_PATH, TempWorkPath);
-	//SetCurrentDirectory(TempWorkPath); 
+	SetCurrentDirectory(TempWorkPath); 
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
-	threadKeyboradHook = (HANDLE)_beginthreadex(NULL, 0, KeyboradHook, hwnd, 0, 0);
+	threadKeyboardHook = (HANDLE)_beginthreadex(NULL, 0, KeyboardHook, hwnd, 0, 0);
 	threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
 	UINT_PTR timeid1 = SetTimer(hwnd, 1, 1, SetWindowToTopT);
 	UINT_PTR timeid2 = SetTimer(hwnd, 2, 1, SetHideorShowT);
