@@ -86,8 +86,40 @@ BOOL SetRegedit(char *str, char *ValueName, char *Value) {
 	return TRUE;
 }
 
+UINT GetMythwarePathFromRegedit(char *str) {
+	HKEY retKey;
+	char tstr[200] = "SOFTWARE\\WOW6432Node\\TopDomain\\e-Learning Class Standard\\1.00";
+	DWORD dwDisposition = REG_OPENED_EXISTING_KEY;
+	LONG ret = RegCreateKeyEx(HKEY_LOCAL_MACHINE, tstr, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &retKey, &dwDisposition);
+	if (ret != ERROR_SUCCESS) {
+		return 1;
+	}
+	BYTE tByte[MAX_PATH * 2 + 1]; 
+	DWORD nSize;
+	int sum = 0;
+	ret = RegQueryValueEx(retKey, "TargetDirectory", NULL, NULL, tByte, &nSize);
+	if (ret == ERROR_SUCCESS) {
+		for (int i = 0; i < int(nSize); i += 1) {
+			*(str + sum) = tByte[i];
+			if (*(str + sum++) == '\\') {
+				*(str + sum++) = '\\';
+			}		
+		}
+		printf("%d\n", sum); 
+		return 2;
+	}
+	return 3;
+}
+
 int main() {
-	puts(SetRegedit("MythwareHelper", "agree", "yes") ? "succes" : "fail");
+	char str[MAX_PATH * 2 + 1];
+	UINT ret = GetMythwarePathFromRegedit(str);
+	if (ret == 2) {
+		printf("%s", str);
+	}
+	else {
+		printf("%u", ret);
+	}
 	getchar();
 	return 0;
 }

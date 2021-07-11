@@ -226,6 +226,35 @@ BOOL ShowBalloonTip(LPCTSTR szMsg, LPCTSTR szTitle, DWORD dwInfoFlags = NIIF_INF
 //版权声明：本文为CSDN博主「江南-一苇渡江」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
 //原文链接：https://blog.csdn.net/wangshubo1989/article/details/49533051
 
+UINT GetMythwarePathFromRegedit(char *str) {
+	HKEY retKey;
+	char tstr[200] = "SOFTWARE\\WOW6432Node\\TopDomain\\e-Learning Class Standard\\1.00";
+	DWORD dwDisposition = REG_OPENED_EXISTING_KEY;
+	LONG ret = RegCreateKeyEx(HKEY_LOCAL_MACHINE, tstr, 0, NULL, REG_OPTION_NON_VOLATILE, KEY_READ, NULL, &retKey, &dwDisposition);
+	if (ret != ERROR_SUCCESS) {
+		ShowBalloonTip("打开注册表失败", "提示");
+		return FALSE;
+	}
+	BYTE tByte[MAX_PATH * 2 + 1]; 
+	DWORD nSize = MAX_PATH * 2 + 1;
+	int sum = 0;
+	ret = RegQueryValueEx(retKey, "TargetDirectory", NULL, NULL, tByte, &nSize);
+//	char retstr[100];
+//	sprintf(retstr, "%ld   %d", ret, nSize);
+	if (ret == ERROR_SUCCESS) {
+		for (int i = 0; i < int(nSize); i += 1) {
+			*(str + sum) = tByte[i];
+			if (*(str + sum++) == '\\') {
+				*(str + sum++) = '\\';
+			}		
+		}
+		ShowBalloonTip("获取路径成功", "提示");
+		return TRUE;
+	}
+	ShowBalloonTip("获取路径失败", "提示");
+	return FALSE;
+}
+
 void Buttonable(BOOL FLAG, WORD WEI) {
 	switch (WEI) {
 		case 1: {
@@ -325,8 +354,32 @@ VOID SetClipboard(LPCSTR str) {
 	return;
 }
 
+char TempNtsdPath[MAX_PATH + 1];
+
+VOID UseNtsd() {
+	if (!(fopen("ntsd.exe", "r") == NULL)) {
+		return;
+	}
+	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCEA(NTSDEXE), TEXT("EXETYPE"));
+	if (hRsrc == NULL) {
+//		puts("资源文件查找失败");
+//		printf("错误代码%u\n", GetLastError());
+		return;
+	}
+	DWORD dwSize = SizeofResource(NULL, hRsrc);
+	HGLOBAL hGlobal = LoadResource(NULL, hRsrc);
+	LPVOID pBuffer = LockResource(hGlobal);
+	FILE* fp = fopen("ntsd.exe", "wb");
+	if (fp != NULL) {
+		fwrite(pBuffer, sizeof(char), dwSize, fp);
+//		printf("写ntsd成功");
+	}
+	fclose(fp);
+	return;
+}
 
 unsigned int __stdcall IsStart(LPVOID lParam) {
+	UseNtsd();
 	bool FlagSetToum = false, FlagMoveShutdown = false;
 	while (1) {
 		Class = FindWindowW(NULL, BroadcastTitle);
@@ -363,53 +416,7 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			SetWindowText(mythwaretext, "极域未开启");
 
 			SetWindowText(KillB, "重启极域");
-		}
-
-		if (tj.flag == TRUE) {
-			EnterCriticalSection(&CSPID);
-			jiyu.id = tj.id;
-			jiyu.flag = tj.flag;
-			strcpy_s(jiyu.filepath, rsize_t(260), tj.filepath);
-			LeaveCriticalSection(&CSPID);
-			printf("jiyu - %s\n", tj.filepath);
-			for (char i = strlen(tj.filepath) - 1; i >= 0; i--) {
-				if (tj.filepath[i] == '\\') {
-					tj.filepath[i] = '\0';
-					break;
-				}
-			}
-			printf("jiyu查询后 - %s\n", tj.filepath);
-			SetWindowText(mythwareversiontext, tj.filepath);
-//			char tp1[260] = {0}, tp2[260] = {0};
-//			strcpy_s(tp1, rsize_t(260), tj.filepath);
-//			strcat_s(tp1, rsize_t(260), "\\Shutdown.exe");
-//			strcpy_s(tp2, rsize_t(260), tj.filepath);
-//			strcat_s(tp2, rsize_t(260), "\\hhh\\Shutdown.exe");
-//			int res1 = _taccess(tp1, F_OK);
-//			int res2 = _taccess(tp2, F_OK);
-//			printf("tp1 - %s\n", tp1);
-//			printf("tp2 - %s\n", tp2);
-//			if (res1 == -1 && res2 == -1 && FlagMoveShutdown == true) {
-//				FlagMoveShutdown == false;
-//				EnableWindow(MoveShutdownB, FALSE);
-//				SetWindowText(MoveShutdownB, "未检测到Shutdown文件");
-//			}
-//			else {
-//				if (res1 == 0 && FlagMoveShutdown == false) {
-//					//printf("_taccess返回 0\n");
-//					FlagMoveShutdown = true;
-//					EnableWindow(MoveShutdownB, TRUE);
-//					SetWindowText(MoveShutdownB, "开启防教师端关机");
-//				}
-//				else if (res2 == 0 && FlagMoveShutdown == true) {
-//					FlagMoveShutdown = false;
-//					EnableWindow(MoveShutdownB, TRUE);
-//					SetWindowText(MoveShutdownB, "关闭防教师端关机");
-//				}
-//			}
-		} else {
-			SetWindowText(mythwareversiontext, "极域未开启！！！");
-		}
+		} 
 		//printf("%u\n", pid);
 	}
 	return 0;
@@ -490,30 +497,6 @@ VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
 	}
 }
 
-char TempNtsdPath[MAX_PATH + 1];
-
-VOID UseNtsd() {
-	if (!(fopen("ntsd.exe", "r") == NULL)) {
-		return;
-	}
-	HRSRC hRsrc = FindResource(NULL, MAKEINTRESOURCEA(NTSDEXE), TEXT("EXETYPE"));
-	if (hRsrc == NULL) {
-//		puts("资源文件查找失败");
-//		printf("错误代码%u\n", GetLastError());
-		return;
-	}
-	DWORD dwSize = SizeofResource(NULL, hRsrc);
-	HGLOBAL hGlobal = LoadResource(NULL, hRsrc);
-	LPVOID pBuffer = LockResource(hGlobal);
-	FILE* fp = fopen("ntsd.exe", "wb");
-	if (fp != NULL) {
-		fwrite(pBuffer, sizeof(char), dwSize, fp);
-//		printf("写ntsd成功");
-	}
-	fclose(fp);
-	return;
-}
-
 //int GetMythwarePortFromPid(int pid) {
 //	popen("ls", "r");
 //	return port;
@@ -560,7 +543,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 
 			mythwaretext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			guangbotext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 170, 10, 150, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			mythwareversiontext = CreateWindow(TEXT("static"), TEXT(""),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			char tstr[MAX_PATH * 2 + 1] = {};
+			if (GetMythwarePathFromRegedit(tstr) == TRUE) {
+				mythwareversiontext = CreateWindow(TEXT("static"), TEXT(tstr),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			}
+			else {
+				mythwareversiontext = CreateWindow(TEXT("static"), TEXT("获取极域路径失败"),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
+			}
 			CreateWindow(TEXT("static"), TEXT("from liu_zhou"),  WS_VISIBLE | WS_CHILD, 10, 310, 300, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
 			KillB = CreateWindow(TEXT("button"), TEXT("杀死极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
@@ -630,12 +619,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 						
 						SetWindowText(KillB, "重启极域");
 					} else if (strcmp(tstr, "重启极域") == 0) {
-						EnterCriticalSection(&CSPID);
-						UINT res = WinExec(jiyu.filepath, SW_HIDE);
-						LeaveCriticalSection(&CSPID);
+//						EnterCriticalSection(&CSPID);
+//						UINT res = WinExec(jiyu.filepath, SW_HIDE);
+//						LeaveCriticalSection(&CSPID);
+						char tstr[MAX_PATH * 2 + 1];
+						GetWindowText(mythwareversiontext, tstr, MAX_PATH * 2);
+						UINT res = WinExec(tstr, SW_HIDE);
 						if (res <= 32) {
 							//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
-							ShowBalloonTip("重启极域失败!无法获取极域路径", "提示");
+							ShowBalloonTip("重启极域失败!", "提示");
 						} else {
 							SetWindowText(KillB, "杀死极域");
 						}
@@ -749,7 +741,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	GetTempPath(MAX_PATH, TempWorkPath);
-	SetCurrentDirectory(TempWorkPath); 
+	//SetCurrentDirectory(TempWorkPath); 
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
 	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
