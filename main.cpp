@@ -729,8 +729,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	hwnd = CreateWindowEx(WS_EX_CLIENTEDGE, "WindowClass", "Mythware helper", (WS_VISIBLE | WS_OVERLAPPEDWINDOW)^WS_MAXIMIZEBOX ^ WS_SIZEBOX,
 	                      CW_USEDEFAULT, /* x */
 	                      CW_USEDEFAULT, /* y */
-	                      350, /* width */
-	                      365, /* height */
+	                      340, /* width */
+	                      375, /* height */
 	                      NULL, NULL, hInstance, NULL);
 
 	if (hwnd == NULL) {
