@@ -55,6 +55,7 @@ HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKe
 HWND mythwaretext = NULL, guangbotext = NULL, mythwareversiontext = NULL;
 HWND SuspendB = NULL, RebootB = NULL, KillB = NULL, JcB = NULL, PassWdB = NULL, KeyboardHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, YinCB = NULL, GetRegeditPassWdB = NULL;
 HWND Class = NULL, Mythware = NULL;
+HFONT hFont = NULL;
 DWORD pid;
 NOTIFYICONDATA m_nid;
 
@@ -495,6 +496,11 @@ VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
 //	return port;
 //}
 
+BOOL CALLBACK SetWindowFont(HWND hwndChild, LPARAM lParam) {
+	SendMessage(hwndChild, WM_SETFONT, (WPARAM)hFont, NULL); 
+	return TRUE;
+}
+
 /* This is where all the input to the window goes to */
 LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) {
 	switch (Message) {
@@ -509,6 +515,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			DeleteCriticalSection(&CSPID);
 			UnregisterHotKey(hwnd, ID_ACCR_SHOW);
 			UnregisterHotKey(hwnd, ID_ACCR_HIDE);
+			DeleteObject(hFont);
 			PostQuitMessage(0);
 			break;
 		}
@@ -566,6 +573,14 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			
 			KeyBoardHookEvent = CreateEventEx(NULL, "IsSetKeyboardHook", CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
 			ResetEvent(KeyBoardHookEvent);
+			
+			hFont = CreateFont(-15, -7.5, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, TEXT("微软雅黑"));
+			EnumChildWindows(hwnd, SetWindowFont, (LPARAM)0);
+			
+			threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
+			threadKeyboardHook = (HANDLE)_beginthreadex(NULL, 0, KeyboardHook, hwnd, 0, 0);
+			threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
+			
 			break;
 		}
 		/* Upon destruction, tell the main thread to stop */
@@ -747,9 +762,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetCurrentDirectory(TempWorkPath); 
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
-	threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
-	threadKeyboardHook = (HANDLE)_beginthreadex(NULL, 0, KeyboardHook, hwnd, 0, 0);
-	threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
 	UINT_PTR timeid1 = SetTimer(hwnd, 1, 1, SetWindowToTopT);
 	UINT_PTR timeid2 = SetTimer(hwnd, 2, 1, SetHideorShowT);
 	while (GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */

@@ -111,14 +111,48 @@ UINT GetMythwarePathFromRegedit(char *str) {
 	return 3;
 }
 
+BOOL GetMythwarePasswordFromRegedit(char *str) {
+	HKEY retKey;
+	BYTE retKeyVal[MAX_PATH * 10] = { 0 };
+	DWORD nSize = MAX_PATH * 10;
+	LONG ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\TopDomain\\e-Learning Class\\Student", 0, KEY_QUERY_VALUE | KEY_WOW64_32KEY, &retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	ret = RegQueryValueExA(retKey, "knock1", NULL, NULL, (LPBYTE)retKeyVal, &nSize);
+	RegCloseKey(retKey);
+	if (ret != ERROR_SUCCESS) {
+		return FALSE;
+	}
+	for (int i = 0; i < int(nSize); i += 4) {
+		retKeyVal[i + 0] = (retKeyVal[i + 0] ^ 0x50 ^ 0x45);
+		retKeyVal[i + 1] = (retKeyVal[i + 1] ^ 0x43 ^ 0x4c);
+		retKeyVal[i + 2] = (retKeyVal[i + 2] ^ 0x4c ^ 0x43);
+		retKeyVal[i + 3] = (retKeyVal[i + 3] ^ 0x45 ^ 0x50);
+	}
+	for (int i = 0; i < int(nSize); i += 2) {
+		printf("%x ", retKeyVal[i]);
+		if (i % 16 == 0) puts("");
+	}
+	int sum = 0;
+	for (int i = 0; i < int(nSize); i += 1) {
+		if (retKeyVal[i + 1] == 0) {
+			*(str + sum) = retKeyVal[i];
+			sum++;
+			if (retKeyVal[i + 2] == 0 && retKeyVal[i + 3] == 0) break;
+		}
+	}
+	return TRUE;
+}
+
 int main() {
-	char str[MAX_PATH * 2 + 1];
-	UINT ret = GetMythwarePathFromRegedit(str);
-	if (ret == 2) {
-		printf("%s", str);
+	char str[MAX_PATH * 10];
+	UINT ret = GetMythwarePasswordFromRegedit(str);
+	if (!ret) {
+		printf("ERROR");
 	}
 	else {
-		printf("%u", ret);
+		printf("%s", str);
 	}
 	getchar();
 	return 0;
