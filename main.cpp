@@ -153,12 +153,16 @@ BOOL GetMythwarePasswordFromRegedit(char *str) {
 		retKeyVal[i + 2] = (retKeyVal[i + 2] ^ 0x4c ^ 0x43);
 		retKeyVal[i + 3] = (retKeyVal[i + 3] ^ 0x45 ^ 0x50);
 	}
+	for (int i = 0; i < int(nSize); i += 1) {
+		printf("%x ", retKeyVal[i]);
+		if (i % 8 == 0) puts("");
+	}
 	int sum = 0;
 	for (int i = 0; i < int(nSize); i += 1) {
 		if (retKeyVal[i + 1] == 0) {
 			*(str + sum) = retKeyVal[i];
 			sum++;
-			if (retKeyVal[i + 2] == 0 && retKeyVal[i + 3] == 0) break;
+			if (retKeyVal[i] == 0) break;
 		}
 	}
 	return TRUE;
@@ -511,7 +515,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			Shell_NotifyIcon(NIM_DELETE, &m_nid);
 			CloseHandle(threadisstart);
 			CloseHandle(threadKeyboardHook);
-			CloseHandle(threadSetWindowName);
+			//CloseHandle(threadSetWindowName);
 			DeleteCriticalSection(&CSPID);
 			UnregisterHotKey(hwnd, ID_ACCR_SHOW);
 			UnregisterHotKey(hwnd, ID_ACCR_HIDE);
@@ -579,7 +583,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			
 			threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
 			threadKeyboardHook = (HANDLE)_beginthreadex(NULL, 0, KeyboardHook, hwnd, 0, 0);
-			threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
+			//threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
 			
 			break;
 		}
