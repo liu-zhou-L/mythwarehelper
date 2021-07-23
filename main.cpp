@@ -176,15 +176,15 @@ BOOL SetRegedit(char *str, char *ValueName, char *Value) {
 	if (ret != ERROR_SUCCESS) {
 		return FALSE;
 	}
-	ret = RegSetValueEx(retKey,             // sub key handle 
-	            ValueName,       // value name 
-	            0,                        // must be zero 
-	            REG_EXPAND_SZ,            // value type 
-	            (LPBYTE)Value,           // pointer to value data 
-	            strlen(Value) + 1);       // length of value
+	ret = RegSetValueEx(retKey,             // sub key handle
+	                    ValueName,       // value name
+	                    0,                        // must be zero
+	                    REG_EXPAND_SZ,            // value type
+	                    (LPBYTE)Value,           // pointer to value data
+	                    strlen(Value) + 1);       // length of value
 	if (ret != ERROR_SUCCESS) {
-	   	return FALSE;
-	}         
+		return FALSE;
+	}
 	RegCloseKey(retKey);
 	return TRUE;
 }
@@ -240,7 +240,7 @@ UINT GetMythwarePathFromRegedit(char *str) {
 		ShowBalloonTip("打开注册表失败", "提示");
 		return FALSE;
 	}
-	BYTE tByte[MAX_PATH * 2 + 1]; 
+	BYTE tByte[MAX_PATH * 2 + 1];
 	DWORD nSize = MAX_PATH * 2 + 1;
 	int sum = 0;
 	ret = RegQueryValueEx(retKey, "TargetDirectory", NULL, NULL, tByte, &nSize);
@@ -251,7 +251,7 @@ UINT GetMythwarePathFromRegedit(char *str) {
 			*(str + sum) = tByte[i];
 			if (*(str + sum++) == '\\') {
 				*(str + sum++) = '\\';
-			}		
+			}
 		}
 		ShowBalloonTip("获取路径成功", "提示");
 		return TRUE;
@@ -420,7 +420,8 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 			SetWindowText(mythwaretext, "极域未开启");
 
 			SetWindowText(KillB, "重启极域");
-		} 
+		}
+		Sleep(0);
 		//printf("%u\n", pid);
 	}
 	return 0;
@@ -457,7 +458,7 @@ unsigned int __stdcall KeyboardHook(LPVOID lParam) {
 		UnhookWindowsHookEx(m_hHOOK4);
 		m_hHOOK2 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD_LL, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
 		m_hHOOK4 = (HHOOK)SetWindowsHookEx(WH_KEYBOARD, (HOOKPROC)KeyboardProc, GetModuleHandle(NULL), 0);
-			
+		Sleep(0);
 	}
 	return 0;
 }
@@ -501,7 +502,7 @@ VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
 //}
 
 BOOL CALLBACK SetWindowFont(HWND hwndChild, LPARAM lParam) {
-	SendMessage(hwndChild, WM_SETFONT, (WPARAM)hFont, NULL); 
+	SendMessage(hwndChild, WM_SETFONT, (WPARAM)hFont, NULL);
 	return TRUE;
 }
 
@@ -536,7 +537,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			return (INT_PTR)GetStockObject(NULL_BRUSH); //无颜色画刷
 		}
 		case WM_CREATE: {
-			
+
 			SetupTrayIcon(hwnd);
 			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL | MOD_ALT, 83);
 			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL | MOD_ALT, 72);
@@ -550,8 +551,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			char tstr[MAX_PATH * 2 + 1] = {};
 			if (GetMythwarePathFromRegedit(tstr) == TRUE) {
 				mythwareversiontext = CreateWindow(TEXT("static"), TEXT(tstr),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			}
-			else {
+			} else {
 				mythwareversiontext = CreateWindow(TEXT("static"), TEXT("获取极域路径失败"),  WS_VISIBLE | WS_CHILD | WS_DLGFRAME, 10, 240, 300, 60, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			}
 			CreateWindow(TEXT("static"), TEXT("from liu_zhou"),  WS_VISIBLE | WS_CHILD, 10, 310, 300, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
@@ -574,17 +574,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			SetCannotShutdownB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(SETCANNOTSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 			SendMessage(SetCannotShutdownB, BM_SETCHECK, BST_CHECKED, 0);
 			CreateWindow(TEXT("static"), TEXT("拦截关机（失败率高）"), WS_VISIBLE | WS_CHILD, 30, 210, 180, 20, hwnd, NULL, HINSTANCE(hwnd), NULL);
-			
+
 			KeyBoardHookEvent = CreateEventEx(NULL, "IsSetKeyboardHook", CREATE_EVENT_MANUAL_RESET, EVENT_ALL_ACCESS);
 			ResetEvent(KeyBoardHookEvent);
-			
+
 			hFont = CreateFont(-15, -7.5, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_CHARACTER_PRECIS, CLIP_CHARACTER_PRECIS, DEFAULT_QUALITY, FF_DONTCARE, TEXT("微软雅黑"));
 			EnumChildWindows(hwnd, SetWindowFont, (LPARAM)0);
-			
+
 			threadisstart = (HANDLE)_beginthreadex(NULL, 0, IsStart, hwnd, 0, 0);
 			threadKeyboardHook = (HANDLE)_beginthreadex(NULL, 0, KeyboardHook, hwnd, 0, 0);
 			//threadSetWindowName = (HANDLE)_beginthreadex(NULL, 0, SetWindowName, hwnd, 0, 0);
-			
+
 			break;
 		}
 		/* Upon destruction, tell the main thread to stop */
@@ -630,7 +630,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					if (strcmp(tstr, "杀死极域") == 0) {
 						UseNtsd();
 						WinExec("./ntsd -c q -pn studentmain.exe", SW_HIDE);
-						
+
 						SetWindowText(KillB, "重启极域");
 					} else if (strcmp(tstr, "重启极域") == 0) {
 //						EnterCriticalSection(&CSPID);
@@ -638,7 +638,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 //						LeaveCriticalSection(&CSPID);
 						char tstr[MAX_PATH * 2 + 1];
 						GetWindowText(mythwareversiontext, tstr, MAX_PATH * 2);
-						strcat(tstr, "StudentMain.exe"); 
+						strcat(tstr, "StudentMain.exe");
 						UINT res = WinExec(tstr, SW_HIDE);
 						if (res <= 32) {
 							//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
@@ -676,8 +676,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					LRESULT res = SendMessage(KeyboardHookB, BM_GETSTATE, 0, 0);
 					if (res == BST_CHECKED) {
 						SetEvent(KeyBoardHookEvent);
-					}
-					else {
+					} else {
 						ResetEvent(KeyBoardHookEvent);
 					}
 					break;
@@ -718,10 +717,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		if (!SetRegedit("MythwareHelper", "agree", "yes")) {
 			MessageBox(NULL, "写注册表失败，请尝试以管理员权限重新运行本程序，除此以外本程序不需要以管理员权限运行", "提示", MB_OK);
-			return 0; 
+			return 0;
 		}
 	}
-	
+
 //	原文链接：https://blog.csdn.net/awlp1990/article/details/51564379
 	WNDCLASSEX wc; /* A properties struct of our window */
 	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
@@ -763,7 +762,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		this loop will not produce unreasonably high CPU usage
 	*/
 	GetTempPath(MAX_PATH, TempWorkPath);
-	SetCurrentDirectory(TempWorkPath); 
+	SetCurrentDirectory(TempWorkPath);
 	freopen("log.txt", "w", stdout);
 	InitializeCriticalSection(&CSPID);
 	UINT_PTR timeid1 = SetTimer(hwnd, 1, 1, SetWindowToTopT);
