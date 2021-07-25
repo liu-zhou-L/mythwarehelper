@@ -1,5 +1,5 @@
 # Project: mythware helper
-# Makefile created by Dev-C++ 6.6
+# Makefile created by Dev-C++ 6.4-beta3
 
 CPP      = g++.exe
 CC       = gcc.exe

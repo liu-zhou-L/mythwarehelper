@@ -30,7 +30,7 @@ from liu_zhou
 
 const int SUSPEND_BUTTON = 3301;
 const int REBOOT_BUTTON = 3302;
-const int KILL_BUTTON = 3303;
+const int NTSDKILL_BUTTON = 3303;
 const int SETCANNOTSHUTDOWN_BUTTON = 3304;
 const int JC_BUTTON = 3305;
 const int PASSWD_BUTTON = 3306;
@@ -265,6 +265,9 @@ void Buttonable(BOOL FLAG, WORD WEI) {
 	switch (WEI) {
 		case 1: {
 			EnableWindow(SuspendB, FLAG);
+			EnableWindow(RebootB, !FLAG);
+			EnableWindow(NtsdKillB, FLAG);
+			EnableWindow(TaskillKillB, FLAG);
 			break;
 		}
 		case 2: {
@@ -409,18 +412,20 @@ unsigned int __stdcall IsStart(LPVOID lParam) {
 		Jiyu tj = GetProcessPidFromFilename(MythwareFilename);
 //		tt_ = clock();
 //		printf("spend - %lf\n", (double)(tt_ - tt) / CLOCKS_PER_SEC);
+		EnterCriticalSection(&CSPID);
+		jiyu = tj;
+		LeaveCriticalSection(&CSPID);
 		if (tj.flag == TRUE) {
 			GetWindowThreadProcessId(Mythware, &tj.id);
 			MythwareHandle = OpenProcess(THREAD_ALL_ACCESS, false, tj.id);
+			
 			Buttonable(TRUE, 1);
 			SetWindowText(mythwaretext, "极域已开启");
-			SetWindowText(NtsdKillB, "ntsd杀死极域");
 		} else {
+			jiyu.flag = FALSE;
 			Buttonable(FALSE, 1);
 			CloseHandle(MythwareHandle);
 			SetWindowText(mythwaretext, "极域未开启");
-
-			SetWindowText(NtsdKillB, "重启极域");
 		}
 		Sleep(0);
 		//printf("%u\n", pid);
@@ -522,7 +527,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			UnregisterHotKey(hwnd, ID_ACCR_SHOW);
 			UnregisterHotKey(hwnd, ID_ACCR_HIDE);
 			DeleteObject(hFont);
-			remove("ntsd.exe");
 			PostQuitMessage(0);
 			break;
 		}
@@ -539,7 +543,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			return (INT_PTR)GetStockObject(NULL_BRUSH); //无颜色画刷
 		}
 		case WM_CREATE: {
-
+			
+			GetTempPath(MAX_PATH, TempWorkPath);
+			SetCurrentDirectory(TempWorkPath);
+			freopen("log.txt", "w", stdout);
+			ShowBalloonTip(TempWorkPath, "提示");
+			InitializeCriticalSection(&CSPID);
+			
 			SetupTrayIcon(hwnd);
 			RegisterHotKey(hwnd, ID_ACCR_SHOW, MOD_WIN | MOD_CONTROL | MOD_ALT, 83);
 			RegisterHotKey(hwnd, ID_ACCR_HIDE, MOD_WIN | MOD_CONTROL | MOD_ALT, 72);
@@ -558,12 +568,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			}
 			CreateWindow(TEXT("static"), TEXT("from liu_zhou"),  WS_VISIBLE | WS_CHILD, 10, 310, 300, 30, hwnd, NULL, HINSTANCE(hwnd), NULL);
 			SuspendB = CreateWindow(TEXT("button"), TEXT("挂起极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(SUSPEND_BUTTON), HINSTANCE(hwnd), NULL);
-			NtsdKillB = CreateWindow(TEXT("button"), TEXT("ntsd杀极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(KILL_BUTTON), HINSTANCE(hwnd), NULL);
-			TaskillKillB = CreateWindow(TEXT("button"), TEXT("Taskill杀极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 30, hwnd, HMENU(TASKILLKILLD_BUTTON), HINSTANCE(hwnd), NULL);
+			NtsdKillB = CreateWindow(TEXT("button"), TEXT("ntsd杀极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(NTSDKILL_BUTTON), HINSTANCE(hwnd), NULL);
+			TaskillKillB = CreateWindow(TEXT("button"), TEXT("taskill杀极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 130, 150, 30, hwnd, HMENU(TASKILLKILLD_BUTTON), HINSTANCE(hwnd), NULL);
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 50, 150, 30, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
 			GetRegeditPassWdB = CreateWindow(TEXT("button"), TEXT("复制密码（注册表）"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 130, 150, 30, hwnd, HMENU(GETREGEDITPASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 170, 150, 30, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			YinCB = CreateWindow(TEXT("button"), TEXT("隐藏窗体"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(YINC_BUTTON), HINSTANCE(hwnd), NULL);
+			RebootB = CreateWindow(TEXT("button"), TEXT("启动极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 210, 150, 30, hwnd, HMENU(REBOOT_BUTTON), HINSTANCE(hwnd), NULL);
 			EnableWindow(MoveShutdownB, FALSE);
 
 			KeyboardHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 170, 15, 15, hwnd, HMENU(KEYBOARDHOOK_BUTTON), HINSTANCE(hwnd), NULL);
@@ -616,6 +627,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					//SuspendThread(MythwareHandle);
 					char tstr[50];
 					GetWindowText(SuspendB, tstr, 50);
+					EnterCriticalSection(&CSPID);		
 					if (strcmp(tstr, "挂起极域") == 0) {
 						SuspendProcess(jiyu.id, TRUE);
 						SetWindowText(SuspendB, "恢复极域");
@@ -623,32 +635,15 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 						SuspendProcess(jiyu.id, FALSE);
 						SetWindowText(SuspendB, "挂起极域");
 					}
+					LeaveCriticalSection(&CSPID);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
-				case KILL_BUTTON: {
+				case NTSDKILL_BUTTON: {
 					//TerminateThread(MythwareHandle, 0);
-					char tstr[50];
-					GetWindowText(NtsdKillB, tstr, 50);
-					if (strcmp(tstr, "ntsd杀死极域") == 0) {
-						UseNtsd();
-						if (WinExec("ntsd -c q -pn studentmain.exe", SW_HIDE) <= 32) {
-							ShowBalloonTip("ntsd执行失败!", "提示");
-						}
-						SetWindowText(NtsdKillB, "重启极域");
-					} else if (strcmp(tstr, "重启极域") == 0) {
-//						EnterCriticalSection(&CSPID);
-//						UINT res = WinExec(jiyu.filepath, SW_HIDE);
-//						LeaveCriticalSection(&CSPID);
-						char tstr[MAX_PATH * 2 + 1];
-						GetWindowText(mythwareversiontext, tstr, MAX_PATH * 2);
-						strcat(tstr, "StudentMain.exe");
-						if (WinExec(tstr, SW_HIDE) <= 32) {
-							//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
-							ShowBalloonTip("重启极域失败!", "提示");
-						} else {
-							SetWindowText(NtsdKillB, "ntsd杀死极域");
-						}
+					UseNtsd();
+					if (WinExec("ntsd -c q -pn studentmain.exe", SW_HIDE) <= 32) {
+						ShowBalloonTip("ntsd执行失败!", "提示");
 					}
 					break;
 				}
@@ -685,6 +680,13 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					break;
 				}
 				case REBOOT_BUTTON: {
+					char tstr[MAX_PATH * 2 + 1];
+					GetWindowText(mythwareversiontext, tstr, MAX_PATH * 2);
+					strcat(tstr, "StudentMain.exe");
+					if (WinExec(tstr, SW_HIDE) <= 32) {
+						//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
+						ShowBalloonTip("重启极域失败!", "提示");
+					}					
 					break;
 				}
 				case YINC_BUTTON: {
@@ -701,6 +703,12 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					}
 					break;
 				}
+				case TASKILLKILLD_BUTTON: {
+					if (WinExec("taskkill /f /im studentmain.exe", SW_HIDE) <= 32) {
+						ShowBalloonTip("taskill执行失败!", "提示");
+					}
+					break;
+				} 
 			}
 			break;
 		}
@@ -723,8 +731,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			return 0;
 		}
 	}
-
-//	原文链接：https://blog.csdn.net/awlp1990/article/details/51564379
+	
 	WNDCLASSEX wc; /* A properties struct of our window */
 	HWND hwnd; /* A 'HANDLE', hence the H, or a pointer to our window */
 	MSG msg; /* A temporary location for all messages */
@@ -764,10 +771,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sent to WndProc. Note that GetMessage blocks code flow until it receives something, so
 		this loop will not produce unreasonably high CPU usage
 	*/
-	GetTempPath(MAX_PATH, TempWorkPath);
-	SetCurrentDirectory(TempWorkPath);
-	freopen("log.txt", "w", stdout);
-	InitializeCriticalSection(&CSPID);
 	UINT_PTR timeid1 = SetTimer(hwnd, 1, 1, SetWindowToTopT);
 	UINT_PTR timeid2 = SetTimer(hwnd, 2, 1, SetHideorShowT);
 	while (GetMessage(&msg, NULL, 0, 0) > 0) { /* If no error is received... */

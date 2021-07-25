@@ -145,15 +145,50 @@ BOOL GetMythwarePasswordFromRegedit(char *str) {
 	return TRUE;
 }
 
+/*
+函数功能:挂起进程中的所有线程
+参数1:进程ID
+参数2:若为TRUE时对进程中的所有线程调用SuspendThread,挂起线程
+      若为FALSE时对进程中的所有线程调用ResumeThread,恢复线程
+*/
+
+VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(
+	                       TH32CS_SNAPTHREAD, dwProcessID);
+
+	if (hSnapshot != INVALID_HANDLE_VALUE) {
+
+		THREADENTRY32 te = {sizeof(te)};
+		BOOL fOk = Thread32First(hSnapshot, &te);
+		for (; fOk; fOk = Thread32Next(hSnapshot, &te)) {
+			if (te.th32OwnerProcessID == dwProcessID) {
+				HANDLE hThread = OpenThread(THREAD_SUSPEND_RESUME, FALSE, te.th32ThreadID);
+
+				if (hThread != NULL) {
+					if (fSuspend) {
+						SuspendThread(hThread);
+					} else {
+						ResumeThread(hThread);
+					}
+				}
+				CloseHandle(hThread);
+			}
+		}
+		CloseHandle(hSnapshot);
+	}
+}
+
 int main() {
-	char str[MAX_PATH * 10];
-	UINT ret = GetMythwarePasswordFromRegedit(str);
-	if (!ret) {
-		printf("ERROR");
-	}
-	else {
-		printf("%s", str);
-	}
+//	char str[MAX_PATH * 10];
+//	UINT ret = GetMythwarePasswordFromRegedit(str);
+//	if (!ret) {
+//		printf("ERROR");
+//	}
+//	else {
+//		printf("%s", str);
+//	}
+//	getchar();
+	SuspendProcess(GetProcessPidFromFilename("StudentMain.exe").id, TRUE);
 	getchar();
 	return 0;
 }
