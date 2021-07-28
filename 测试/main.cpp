@@ -12,7 +12,7 @@ struct Jiyu {
 	DWORD id;
 	char filepath[260];
 	BOOL flag;
-}; 
+} jiyu; 
 
 Jiyu ModuleIsAble(DWORD ProcessPid, LPCSTR Modulename) {
 	Jiyu tj;
@@ -188,7 +188,16 @@ int main() {
 //		printf("%s", str);
 //	}
 //	getchar();
-	SuspendProcess(GetProcessPidFromFilename("StudentMain.exe").id, TRUE);
+	Jiyu tj = GetProcessPidFromFilename("StudentMain.exe");
+	HWND Mythware; 
+	GetWindowThreadProcessId(Mythware, &tj.id);
+	is
+	if (IsHungAppWindow(Mythware) == TRUE) {
+		printf("¹ÒÆð"); 
+	}
+	else {
+		printf("Î´¹ÒÆð");
+	}
 	getchar();
 	return 0;
 }
