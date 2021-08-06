@@ -8,6 +8,8 @@
 #include <io.h>
 #include <time.h>
 
+#pragma comment(lib, "ntdll.dll")
+
 struct Jiyu {
 	DWORD id;
 	char filepath[260];
@@ -189,14 +191,15 @@ int main() {
 //	}
 //	getchar();
 	Jiyu tj = GetProcessPidFromFilename("StudentMain.exe");
-	HWND Mythware; 
+	HWND Mythware = NULL; 
 	GetWindowThreadProcessId(Mythware, &tj.id);
-	is
-	if (IsHungAppWindow(Mythware) == TRUE) {
-		printf("¹ÒÆð"); 
+	DWORD_PTR dwResult = 0;
+	LRESULT res = SendMessageTimeout((HWND)Mythware, WM_NULL, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, 500, &dwResult); 
+	if (res) {
+		printf("Hung");
 	}
 	else {
-		printf("Î´¹ÒÆð");
+		printf("not Hung");
 	}
 	getchar();
 	return 0;
