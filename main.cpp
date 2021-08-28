@@ -38,7 +38,7 @@ const int KEYBOARDHOOK_BUTTON = 3307;
 const int SETFIRST_BUTTON = 3308;
 const int SETTOUM_BUTTON = 3309;
 const int MOVESHUTDOWN_BUTTON = 3310;
-const int HUIDFU_BUTTON = 3311; 
+const int HUIFU_BUTTON = 3311; 
 const int GETREGEDITPASSWD_BUTTON = 3312;
 const int TASKILLKILLD_BUTTON = 3313; 
 const int ID_ACCR_SHOW = 1001;
@@ -268,23 +268,8 @@ void Buttonable(BOOL FLAG, WORD WEI) {
 			EnableWindow(RebootB, !FLAG);
 			EnableWindow(NtsdKillB, FLAG);
 			EnableWindow(TaskillKillB, FLAG);
-			
-			if (FLAG == TRUE) {
-				DWORD ret;
-				GetExitCodeProcess(MythwareHandle, &ret);
-				if (ret == STILL_ACTIVE) {
-					EnableWindow(HuifuB, !FLAG);
-					EnableWindow(SuspendB, FLAG);
-				}
-				else {
-					EnableWindow(HuifuB, FLAG);
-					EnableWindow(SuspendB, !FLAG);
-				}
-			}
-			else {
-				EnableWindow(HuifuB, FLAG);
-				EnableWindow(SuspendB, FLAG);
-			}
+			EnableWindow(HuifuB, FLAG);
+			EnableWindow(SuspendB, FLAG);
 			break;
 		}
 		case 2: {
@@ -588,7 +573,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			JcB = CreateWindow(TEXT("button"), TEXT("解除全屏按钮限制"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 90, 150, 30, hwnd, HMENU(JC_BUTTON), HINSTANCE(hwnd), NULL);
 			GetRegeditPassWdB = CreateWindow(TEXT("button"), TEXT("复制密码（注册表）"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 170, 150, 30, hwnd, HMENU(GETREGEDITPASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 170, 150, 30, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
-			HuifuB = CreateWindow(TEXT("button"), TEXT("恢复极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(HUIDFU_BUTTON), HINSTANCE(hwnd), NULL);
+			HuifuB = CreateWindow(TEXT("button"), TEXT("恢复极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(HUIFU_BUTTON), HINSTANCE(hwnd), NULL);
 			RebootB = CreateWindow(TEXT("button"), TEXT("启动极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(REBOOT_BUTTON), HINSTANCE(hwnd), NULL);
 
 			KeyboardHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(KEYBOARDHOOK_BUTTON), HINSTANCE(hwnd), NULL);
@@ -639,20 +624,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			switch (LOWORD(wParam)) {
 				case SUSPEND_BUTTON: {
 					//SuspendThread(MythwareHandle);
-					char tstr[50];
-					GetWindowText(SuspendB, tstr, 50);
 					EnterCriticalSection(&CSPID);		
-					if (strcmp(tstr, "挂起极域") == 0) {
-						SuspendProcess(jiyu.id, TRUE);
-						SetWindowText(SuspendB, "恢复极域");
-					} else if (strcmp(tstr, "恢复极域") == 0) {
-						SuspendProcess(jiyu.id, FALSE);
-						SetWindowText(SuspendB, "挂起极域");
-					}
+					SuspendProcess(jiyu.id, TRUE); 
 					LeaveCriticalSection(&CSPID);
 					//MessageBox(NULL, "点击", "点击", NULL);
 					break;
 				}
+				case HUIFU_BUTTON: {
+					EnterCriticalSection(&CSPID);		
+					SuspendProcess(jiyu.id, FALSE); 
+					LeaveCriticalSection(&CSPID);
+					break;
+				}				
 				case NTSDKILL_BUTTON: {
 					//TerminateThread(MythwareHandle, 0);
 					UseNtsd();
@@ -702,10 +685,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 						//MessageBox(NULL, "重启极域失败!无法获取极域路径", "提示", MB_ICONWARNING | MB_OK);
 						ShowBalloonTip("重启极域失败!", "提示");
 					}					
-					break;
-				}
-				case HUIDFU_BUTTON: {
-					ShowWindow(hwnd, SW_HIDE);
 					break;
 				}
 				case GETREGEDITPASSWD_BUTTON: {

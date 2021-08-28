@@ -180,6 +180,17 @@ VOID SuspendProcess(DWORD dwProcessID, BOOL fSuspend) {
 	}
 }
 
+BOOL CALLBACK EnumChildWindowsProc(HWND hwndChild, LPARAM lParam) {
+	HMENU hmenu = GetMenu(hwndChild);
+	printf("%u\n", LOWORD(hmenu));
+	if (LOWORD(hmenu) != 0) {
+		EnableWindow(hwndChild, FALSE);
+		getchar();
+		EnableWindow(hwndChild, TRUE);
+	}
+	return TRUE;
+}
+
 int main() {
 //	char str[MAX_PATH * 10];
 //	UINT ret = GetMythwarePasswordFromRegedit(str);
@@ -190,17 +201,24 @@ int main() {
 //		printf("%s", str);
 //	}
 //	getchar();
-	Jiyu tj = GetProcessPidFromFilename("StudentMain.exe");
-	HWND Mythware = NULL; 
-	GetWindowThreadProcessId(Mythware, &tj.id);
-	DWORD_PTR dwResult = 0;
-	LRESULT res = SendMessageTimeout((HWND)Mythware, WM_NULL, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, 500, &dwResult); 
-	if (res) {
-		printf("Hung");
-	}
-	else {
-		printf("not Hung");
-	}
+
+
+
+
+//	Jiyu tj = GetProcessPidFromFilename("StudentMain.exe");
+//	HWND Mythware = FindWindow(NULL, "StudentMain.exe"); 
+//	//GetWindowThreadProcessId(Mythware, &tj.id);
+//	DWORD_PTR dwResult = 0;
+//	LRESULT res = SendMessageTimeout(Mythware, WM_NULL, 0, 0, SMTO_ABORTIFHUNG | SMTO_BLOCK, 500, &dwResult); 
+//	if (res) {
+//		printf("Hung");
+//	}
+//	else {
+//		printf("not Hung");
+//	}
+
+	HWND Mythware = FindWindow(NULL, "StudentMain.exe"); 
+	EnumChildWindows(Mythware, EnumChildWindowsProc, (LPARAM)0);
 	getchar();
 	return 0;
 }
