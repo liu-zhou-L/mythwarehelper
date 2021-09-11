@@ -41,6 +41,7 @@ const int MOVESHUTDOWN_BUTTON = 3310;
 const int HUIFU_BUTTON = 3311; 
 const int GETREGEDITPASSWD_BUTTON = 3312;
 const int TASKILLKILLD_BUTTON = 3313; 
+const int DELETSHUTDOWN_BUTTON = 3314;
 const int ID_ACCR_SHOW = 1001;
 const int ID_ACCR_HIDE = 1002;
 const int WM_MSG =  RegisterWindowMessage("postmessage");
@@ -54,7 +55,7 @@ char TempWorkPath[MAX_PATH + 1];
 
 HANDLE ClassHandle = NULL, MythwareHandle = NULL, threadisstart = NULL, threadKeyboardHook = NULL, threadSetWindowName = NULL, KeyBoardHookEvent = NULL;
 HWND mythwaretext = NULL, guangbotext = NULL, mythwareversiontext = NULL;
-HWND SuspendB = NULL, HuifuB = NULL, RebootB = NULL, NtsdKillB = NULL, TaskillKillB = NULL, JcB = NULL, PassWdB = NULL, KeyboardHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, GetRegeditPassWdB = NULL;
+HWND SuspendB = NULL, HuifuB = NULL, RebootB = NULL, NtsdKillB = NULL, TaskillKillB = NULL, JcB = NULL, PassWdB = NULL, KeyboardHookB = NULL, SetFirstB = NULL, MoveShutdownB = NULL, SetCannotShutdownB = NULL, GetRegeditPassWdB = NULL, DeleteShutdownB = NULL;
 HWND Class = NULL, Mythware = NULL;
 HFONT hFont = NULL;
 DWORD pid;
@@ -547,7 +548,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			
 			GetTempPath(MAX_PATH, TempWorkPath);
 			SetCurrentDirectory(TempWorkPath);
-			freopen("log.txt", "w", stdout);
 			InitializeCriticalSection(&CSPID);
 			
 			SetupTrayIcon(hwnd);
@@ -575,6 +575,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 			PassWdB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 170, 150, 30, hwnd, HMENU(PASSWD_BUTTON), HINSTANCE(hwnd), NULL);
 			HuifuB = CreateWindow(TEXT("button"), TEXT("恢复极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 90, 150, 30, hwnd, HMENU(HUIFU_BUTTON), HINSTANCE(hwnd), NULL);
 			RebootB = CreateWindow(TEXT("button"), TEXT("启动极域"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 10, 50, 150, 30, hwnd, HMENU(REBOOT_BUTTON), HINSTANCE(hwnd), NULL);
+			DeleteShutdownB = CreateWindow(TEXT("button"), TEXT("复制万能密码"),  WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON, 170, 210, 150, 30, hwnd, HMENU(DELETSHUTDOWN_BUTTON), HINSTANCE(hwnd), NULL);
 
 			KeyboardHookB = CreateWindow(TEXT("button"), TEXT(""),  WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 210, 15, 15, hwnd, HMENU(KEYBOARDHOOK_BUTTON), HINSTANCE(hwnd), NULL);
 			//SendMessage(KeyboardHookB, BM_SETCHECK, BST_CHECKED, 0);
@@ -703,6 +704,19 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT Message, WPARAM wParam, LPARAM lParam) 
 					}
 					break;
 				} 
+				case DELETSHUTDOWN_BUTTON: {
+					char sdpath[MAX_PATH + 1] = {};
+					GetMythwarePathFromRegedit(sdpath);
+					strcat(sdpath, "Shoutdown.exe");
+					printf("sdpath - %s", sdpath);
+					if (remove(sdpath) == 0) {
+						ShowBalloonTip("删除Shutdown.exe文件成功", "提示");
+					}
+					else {
+						ShowBalloonTip("删除Shutdown.exe文件失败", "提示");					
+					} 
+					break;
+				}
 			}
 			break;
 		}
