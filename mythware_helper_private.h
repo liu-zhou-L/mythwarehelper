@@ -1,8 +1,8 @@
-/* THIS FILE WILL BE OVERWRITTEN BY DEV-C++ */
+/* THIS FILE WILL BE OVERWRITTEN BY Red Panda C++ */
 /* DO NOT EDIT ! */
 
-#ifndef MYTHWARE_HELPER_PRIVATE_H
-#define MYTHWARE_HELPER_PRIVATE_H
+#ifndef mythware_helper_private_rc
+#define mythware_helper_private_rc
 
 /* VERSION DEFINITIONS */
 #define VER_STRING	"1.0.0.0"
@@ -20,4 +20,4 @@
 #define PRODUCT_NAME	"Mythware helper"
 #define PRODUCT_VERSION	"1.0.0.0"
 
-#endif /*MYTHWARE_HELPER_PRIVATE_H*/
+#endif /*mythware_helper_private_rc*/

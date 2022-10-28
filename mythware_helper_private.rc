@@ -1,4 +1,4 @@
-/* THIS FILE WILL BE OVERWRITTEN BY DEV-C++ */
+/* THIS FILE WILL BE OVERWRITTEN BY Red Panda C++ */
 /* DO NOT EDIT! */
 
 #include <windows.h> // include for version info constants
@@ -17,7 +17,7 @@ FILETYPE VFT_APP
 {
   BLOCK "StringFileInfo"
   {
-    BLOCK "080404E4"
+    BLOCK "080404e4"
     {
       VALUE "CompanyName", ""
       VALUE "FileVersion", "1.0.0.0"

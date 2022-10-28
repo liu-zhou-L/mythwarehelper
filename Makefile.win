@@ -1,5 +1,5 @@
 # Project: mythware helper
-# Makefile created by Dev-C++ 6.6
+# Makefile created by Red Panda C++ 1.4
 
 CPP      = g++.exe
 CC       = gcc.exe
@@ -7,27 +7,27 @@ WINDRES  = windres.exe
 RES      = mythware_helper_private.res
 OBJ      = main.o $(RES)
 LINKOBJ  = main.o $(RES)
-LIBS     = -L"C:/Program Files (x86)/Dev-Cpp/MinGW32/lib" -L"C:/Program Files (x86)/Dev-Cpp/MinGW32/i686-w64-mingw32/lib" -static-libstdc++ -static-libgcc -mwindows -s
-INCS     = -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/i686-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed"
-CXXINCS  = -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/i686-w64-mingw32/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/lib/gcc/i686-w64-mingw32/10.2.0/include-fixed" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/include/c++/10.2.0" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/include/c++/10.2.0/i686-w64-mingw32" -I"C:/Program Files (x86)/Dev-Cpp/MinGW32/include/c++/10.2.0/backward"
+CLEANOBJ  =  main.o mythware_helper_private.res "mythware helper.exe"
+LIBS     =  -mwindows   -static
+INCS     =  
+CXXINCS  =  
 BIN      = "mythware helper.exe"
-CXXFLAGS = $(CXXINCS) -O2
-ENCODINGS = -finput-charset=utf-8 -fexec-charset=gbk
-CFLAGS   = $(INCS) -O2
-RM       = rm.exe -f
+CXXFLAGS = $(CXXINCS)  -g3 -O2 -D__DEBUG__
+CFLAGS   = $(INCS)  -g3 -O2 -D__DEBUG__
+RM       = del /q /f
 
 .PHONY: all all-before all-after clean clean-custom
 
 all: all-before $(BIN) all-after
 
 clean: clean-custom
-	${RM} $(OBJ) $(BIN)
+	${RM} $(CLEANOBJ) > NUL 2>&1
 
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o $(BIN) $(LIBS)
 
-main.o: main.cpp ziyuan.h
-	$(CPP) -c main.cpp -o main.o $(CXXFLAGS)  $(ENCODINGS) 
+main.o: main.cpp
+	$(CPP) -c C:/Users/BZ/Desktop/mythwarehelper/main.cpp -o main.o $(CXXFLAGS)  -finput-charset=UTF-8 -fexec-charset=gbk
 
 mythware_helper_private.res: mythware_helper_private.rc ziyuan.rc
 	$(WINDRES) -i mythware_helper_private.rc --input-format=rc -o mythware_helper_private.res -O coff 
