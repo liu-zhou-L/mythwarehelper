@@ -1,2 +1,2 @@
 # mythwarehelper
-a mythware helper
+一个极域助手
